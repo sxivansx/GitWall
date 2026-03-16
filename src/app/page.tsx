@@ -140,7 +140,7 @@ export default function Home() {
       </header>
 
       {/* Main 3-column row */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_auto] gap-6 items-start mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px_200px] gap-5 items-stretch mb-10">
         {/* Left — Form Card */}
         <Card>
           <CardContent className="space-y-5">
@@ -244,7 +244,7 @@ export default function Home() {
         </Card>
 
         {/* Center — Shortcut URL / Actions */}
-        <Card className="w-full lg:w-[280px] self-stretch">
+        <Card>
           <CardHeader>
             <CardTitle className="text-sm">iOS Shortcut URL</CardTitle>
             <CardDescription className="text-xs">
@@ -289,7 +289,7 @@ export default function Home() {
 
         {/* Right — Phone Preview */}
         <div className="flex justify-center lg:justify-start">
-          <div className="w-[195px] h-[422px] rounded-3xl overflow-hidden border-[3px] border-border bg-background relative shrink-0">
+          <div className="w-[200px] h-full min-h-[420px] rounded-3xl overflow-hidden border-[3px] border-border bg-background relative shrink-0">
             {loading && (
               <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
                 <Loader2 className="size-6 animate-spin" />
