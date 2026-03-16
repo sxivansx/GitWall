@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitWall — GitHub Contribution Wallpapers for iPhone</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --subtext: #8b949e;
+      --accent: #39d353;
+      --accent-dim: #26a641;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--accent), #58a6ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--subtext);
+      font-size: 1.1rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .form-group {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--subtext);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0d1117;
+    }
+
+    .btn-primary:hover { background: var(--accent-dim); }
+
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover { background: #484f58; }
+
+    .preview-container {
+      display: flex;
+      justify-content: center;
+      padding: 24px 0;
+    }
+
+    .phone-frame {
+      width: 195px;
+      height: 422px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 3px solid var(--border);
+      background: var(--bg);
+      position: relative;
+    }
+
+    .phone-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--subtext);
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: var(--subtext);
+    }
+
+    .loading.active { display: block; }
+
+    .shortcut-section {
+      margin-top: 8px;
+    }
+
+    .shortcut-url {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--accent);
+      font-family: monospace;
+      font-size: 0.85rem;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .shortcut-url:focus { border-color: var(--accent); }
+
+    .copy-btn {
+      margin-top: 8px;
+    }
+
+    .themes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .theme-swatch {
+      padding: 8px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      text-align: center;
+      font-size: 0.8rem;
+      transition: border-color 0.2s;
+    }
+
+    .theme-swatch.active { border-color: var(--accent); }
+
+    .theme-colors {
+      display: flex;
+      gap: 3px;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+
+    .theme-colors span {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .steps {
+      counter-reset: step;
+    }
+
+    .step {
+      padding: 12px 0;
+      padding-left: 40px;
+      position: relative;
+      border-left: 2px solid var(--border);
+      margin-left: 12px;
+    }
+
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: -13px;
+      top: 12px;
+      width: 24px;
+      height: 24px;
+      background: var(--accent);
+      color: var(--bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .step:last-child { border-left-color: transparent; }
+
+    .step h3 {
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .step p {
+      font-size: 0.85rem;
+      color: var(--subtext);
+    }
+
+    .error {
+      color: #f85149;
+      font-size: 0.85rem;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .error.active { display: block; }
+
+    footer {
+      text-align: center;
+      padding: 40px 0 20px;
+      color: var(--subtext);
+      font-size: 0.8rem;
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>GitWall</h1>
+      <p>Turn your GitHub contributions into an iPhone wallpaper</p>
+    </header>
+
+    <div class="card">
+      <div class="form-row">
+        <div class="form-group" style="flex: 2;">
+          <label for="username">GitHub Username</label>
+          <input type="text" id="username" placeholder="e.g. torvalds" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="form-group" style="flex: 0; min-width: auto; display: flex; align-items: flex-end;">
+          <button class="btn btn-primary" id="generateBtn">Generate</button>
+        </div>
+      </div>
+
+      <label>Theme</label>
+      <div class="themes-grid" id="themesGrid"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="device">Device</label>
+          <select id="device"></select>
+        </div>
+        <div class="form-group">
+          <label for="stats">Show Stats</label>
+          <select id="stats">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <div class="preview-container">
+      <div class="phone-frame">
+        <div class="placeholder" id="placeholder">Enter your GitHub username and click Generate</div>
+        <div class="loading" id="loading">Loading...</div>
+        <img id="preview" style="display:none" alt="Wallpaper preview">
+      </div>
+    </div>
+
+    <div class="card shortcut-section" id="shortcutSection" style="display:none">
+      <h3 style="margin-bottom: 12px; font-size: 1rem;">iOS Shortcut URL</h3>
+      <p style="color: var(--subtext); font-size: 0.85rem; margin-bottom: 12px;">
+        Use this URL in an iOS Shortcut to automatically update your wallpaper daily.
+      </p>
+      <input type="text" class="shortcut-url" id="shortcutUrl" readonly>
+      <div style="display: flex; gap: 8px; margin-top: 12px;">
+        <button class="btn btn-secondary copy-btn" id="copyBtn">Copy URL</button>
+        <button class="btn btn-secondary" id="downloadBtn">Download PNG</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 16px; font-size: 1.1rem;">Set Up Auto-Updating Wallpaper</h3>
+      <div class="steps">
+        <div class="step">
+          <h3>Generate your wallpaper above</h3>
+          <p>Pick a theme and device, then copy the Shortcut URL.</p>
+        </div>
+        <div class="step">
+          <h3>Create an iOS Shortcut</h3>
+          <p>Open the Shortcuts app → New Shortcut → Add "Get Contents of URL" action with the copied URL.</p>
+        </div>
+        <div class="step">
+          <h3>Set the wallpaper</h3>
+          <p>Add "Set Wallpaper" action, pass the image from the previous step.</p>
+        </div>
+        <div class="step">
+          <h3>Automate it</h3>
+          <p>Go to Automation → Create Personal Automation → Time of Day → set it to run daily → run your shortcut.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>GitWall &mdash; open source on <a href="https://github.com">GitHub</a></p>
+    </footer>
+  </div>
+
+  <script>
+    const themes = [
+      { id: "classic", name: "Classic", colors: ["#0e4429","#006d32","#26a641","#39d353"], background: "#0d1117" },
+      { id: "light", name: "Light", colors: ["#9be9a8","#40c463","#30a14e","#216e39"], background: "#ffffff" },
+      { id: "dracula", name: "Dracula", colors: ["#6272a4","#bd93f9","#ff79c6","#50fa7b"], background: "#282a36" },
+      { id: "nord", name: "Nord", colors: ["#5e81ac","#81a1c1","#88c0d0","#8fbcbb"], background: "#2e3440" },
+      { id: "ocean", name: "Ocean", colors: ["#1d3461","#1f5f8b","#00b4d8","#90e0ef"], background: "#0a192f" },
+      { id: "sunset", name: "Sunset", colors: ["#e94560","#f27121","#e9724c","#ffc857"], background: "#1a1a2e" },
+      { id: "mono", name: "Mono", colors: ["#404040","#737373","#a6a6a6","#d9d9d9"], background: "#000000" },
+    ];
+
+    const devices = [
+      { id: "iphone14", name: "iPhone 14" },
+      { id: "iphone14pro", name: "iPhone 14 Pro" },
+      { id: "iphone14promax", name: "iPhone 14 Pro Max" },
+      { id: "iphone15", name: "iPhone 15" },
+      { id: "iphone15pro", name: "iPhone 15 Pro" },
+      { id: "iphone15promax", name: "iPhone 15 Pro Max" },
+      { id: "iphone16", name: "iPhone 16" },
+      { id: "iphone16pro", name: "iPhone 16 Pro" },
+      { id: "iphone16promax", name: "iPhone 16 Pro Max" },
+    ];
+
+    let selectedTheme = "classic";
+
+    // Populate themes
+    const grid = document.getElementById("themesGrid");
+    themes.forEach(t => {
+      const div = document.createElement("div");
+      div.className = `theme-swatch${t.id === selectedTheme ? " active" : ""}`;
+      div.style.background = t.background;
+      div.innerHTML = `
+        <div class="theme-colors">${t.colors.map(c => `<span style="background:${c}"></span>`).join("")}</div>
+        <span style="color:${t.id === 'light' ? '#24292f' : '#c9d1d9'}">${t.name}</span>
+      `;
+      div.addEventListener("click", () => {
+        document.querySelectorAll(".theme-swatch").forEach(s => s.classList.remove("active"));
+        div.classList.add("active");
+        selectedTheme = t.id;
+      });
+      grid.appendChild(div);
+    });
+
+    // Populate devices
+    const deviceSelect = document.getElementById("device");
+    devices.forEach(d => {
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = d.name;
+      deviceSelect.appendChild(opt);
+    });
+
+    // Generate
+    const generateBtn = document.getElementById("generateBtn");
+    const usernameInput = document.getElementById("username");
+    const previewImg = document.getElementById("preview");
+    const placeholder = document.getElementById("placeholder");
+    const loading = document.getElementById("loading");
+    const errorEl = document.getElementById("error");
+    const shortcutSection = document.getElementById("shortcutSection");
+    const shortcutUrl = document.getElementById("shortcutUrl");
+
+    function getBaseUrl() {
+      return window.location.origin;
+    }
+
+    function buildParams() {
+      const user = usernameInput.value.trim();
+      const theme = selectedTheme;
+      const stats = document.getElementById("stats").value;
+      const device = deviceSelect.value;
+      return { user, theme, stats, device };
+    }
+
+    async function generate() {
+      const { user, theme, stats, device } = buildParams();
+      if (!user) {
+        errorEl.textContent = "Please enter a GitHub username.";
+        errorEl.classList.add("active");
+        return;
+      }
+
+      errorEl.classList.remove("active");
+      placeholder.style.display = "none";
+      previewImg.style.display = "none";
+      loading.classList.add("active");
+
+      const previewUrl = `${getBaseUrl()}/preview?user=${encodeURIComponent(user)}&theme=${theme}&stats=${stats}`;
+      const wallpaperUrl = `${getBaseUrl()}/wallpaper?user=${encodeURIComponent(user)}&theme=${theme}&stats=${stats}&device=${device}`;
+
+      try {
+        const res = await fetch(previewUrl);
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Failed to generate wallpaper");
+        }
+        const blob = await res.blob();
+        previewImg.src = URL.createObjectURL(blob);
+        previewImg.style.display = "block";
+        loading.classList.remove("active");
+
+        shortcutUrl.value = wallpaperUrl;
+        shortcutSection.style.display = "block";
+      } catch (err) {
+        loading.classList.remove("active");
+        placeholder.style.display = "flex";
+        errorEl.textContent = err.message;
+        errorEl.classList.add("active");
+      }
+    }
+
+    generateBtn.addEventListener("click", generate);
+    usernameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") generate();
+    });
+
+    document.getElementById("copyBtn").addEventListener("click", () => {
+      shortcutUrl.select();
+      navigator.clipboard.writeText(shortcutUrl.value);
+      document.getElementById("copyBtn").textContent = "Copied!";
+      setTimeout(() => document.getElementById("copyBtn").textContent = "Copy URL", 2000);
+    });
+
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      const { user, theme, stats, device } = buildParams();
+      const url = `${getBaseUrl()}/wallpaper?user=${encodeURIComponent(user)}&theme=${theme}&stats=${stats}&device=${device}`;
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gitwall-${user}.png`;
+      a.click();
+    });
+  </script>
+</body>
+</html>
