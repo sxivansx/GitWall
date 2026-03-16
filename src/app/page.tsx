@@ -18,7 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Copy, Download, Loader2 } from "lucide-react";
+import {
+  Copy,
+  Download,
+  Loader2,
+  ChevronDown,
+  Smartphone,
+} from "lucide-react";
 
 const themes = [
   { id: "classic", name: "Classic", colors: ["#0e4429", "#006d32", "#26a641", "#39d353"], background: "#0d1117" },
@@ -43,22 +49,10 @@ const devices = [
 ] as const;
 
 const steps = [
-  {
-    title: "Generate your wallpaper above",
-    desc: "Pick a theme and device, then copy the Shortcut URL.",
-  },
-  {
-    title: "Create an iOS Shortcut",
-    desc: 'Open the Shortcuts app \u2192 New Shortcut \u2192 Add "Get Contents of URL" action with the copied URL.',
-  },
-  {
-    title: "Set the wallpaper",
-    desc: 'Add "Set Wallpaper" action, pass the image from the previous step.',
-  },
-  {
-    title: "Automate it",
-    desc: "Go to Automation \u2192 Create Personal Automation \u2192 Time of Day \u2192 set it to run daily \u2192 run your shortcut.",
-  },
+  { title: "Generate", desc: "Pick theme & device, then generate." },
+  { title: "Copy URL", desc: "Copy the Shortcut URL below." },
+  { title: "iOS Shortcut", desc: "\"Get Contents of URL\" action." },
+  { title: "Automate", desc: "Daily trigger sets wallpaper." },
 ];
 
 export default function Home() {
@@ -71,6 +65,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   const generate = useCallback(async () => {
     const user = username.trim();
@@ -128,10 +123,10 @@ export default function Home() {
   }, [wallpaperUrl, username]);
 
   return (
-    <div className="mx-auto max-w-[1200px] px-5 py-10">
+    <div className="mx-auto max-w-[1100px] px-5 py-10">
       {/* Hero */}
       <header className="mb-10 text-center">
-        <h1 className="mb-2 text-4xl font-bold tracking-tight bg-gradient-to-br from-green-400 to-blue-400 bg-clip-text text-transparent">
+        <h1 className="mb-2 text-4xl font-bold tracking-tight bg-gradient-to-br from-green-400 to-cyan-400 bg-clip-text text-transparent">
           GitWall
         </h1>
         <p className="text-muted-foreground text-lg">
@@ -139,165 +134,215 @@ export default function Home() {
         </p>
       </header>
 
-      {/* Main 3-column row */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px_200px] gap-5 items-stretch mb-10">
-        {/* Left — Form Card */}
-        <Card>
-          <CardContent className="space-y-5">
-            {/* Username + Generate */}
-            <div className="flex gap-3 items-end">
-              <div className="flex-1">
-                <Label htmlFor="username" className="mb-1.5">
-                  GitHub Username
-                </Label>
-                <Input
-                  id="username"
-                  placeholder="e.g. torvalds"
-                  autoComplete="off"
-                  spellCheck={false}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && generate()}
-                />
+      {/* Two-column split view */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 mb-10">
+        {/* LEFT — Workspace */}
+        <div className="space-y-5">
+          {/* Card 1: Account */}
+          <Card>
+            <CardContent>
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <Label htmlFor="username" className="mb-2">
+                    GitHub Username
+                  </Label>
+                  <Input
+                    id="username"
+                    placeholder="e.g. torvalds"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="h-10"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && generate()}
+                  />
+                </div>
+                <Button
+                  onClick={generate}
+                  disabled={loading}
+                  className="h-10 px-6 bg-cyan-600 hover:bg-cyan-700 text-white"
+                >
+                  {loading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    "Generate"
+                  )}
+                </Button>
               </div>
-              <Button onClick={generate} disabled={loading} size="lg">
-                {loading ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  "Generate"
-                )}
-              </Button>
-            </div>
+              {error && (
+                <p className="text-destructive text-sm mt-2">{error}</p>
+              )}
+            </CardContent>
+          </Card>
 
-            {/* Theme Swatches */}
-            <div>
-              <Label className="mb-1.5">Theme</Label>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-2">
-                {themes.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setSelectedTheme(t.id)}
-                    className={`rounded-lg p-2 text-center text-xs transition-all cursor-pointer border-2 ${
-                      selectedTheme === t.id
-                        ? "border-green-500"
-                        : "border-transparent"
-                    }`}
-                    style={{ background: t.background }}
-                  >
-                    <div className="flex justify-center gap-1 mb-1">
-                      {t.colors.map((c, i) => (
-                        <span
-                          key={i}
-                          className="size-3 rounded-sm"
-                          style={{ background: c }}
-                        />
+          {/* Card 2: Appearance */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Appearance</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Device + Stats row */}
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Label className="mb-2">Device</Label>
+                  <Select value={device} onValueChange={setDevice}>
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {devices.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.name}
+                        </SelectItem>
                       ))}
-                    </div>
-                    <span
-                      style={{
-                        color: t.id === "light" ? "#24292f" : "#c9d1d9",
-                      }}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1">
+                  <Label className="mb-2">Show Stats</Label>
+                  <Select value={showStats} onValueChange={setShowStats}>
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Yes</SelectItem>
+                      <SelectItem value="false">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Theme Swatches */}
+              <div>
+                <Label className="mb-2">Theme</Label>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(85px,1fr))] gap-2">
+                  {themes.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedTheme(t.id)}
+                      className={`rounded-lg p-2.5 text-center text-xs transition-all cursor-pointer border-2 ${
+                        selectedTheme === t.id
+                          ? "border-cyan-500 ring-1 ring-cyan-500/30"
+                          : "border-transparent hover:border-border"
+                      }`}
+                      style={{ background: t.background }}
                     >
-                      {t.name}
-                    </span>
-                  </button>
-                ))}
+                      <div className="flex justify-center gap-1 mb-1.5">
+                        {t.colors.map((c, i) => (
+                          <span
+                            key={i}
+                            className="size-3 rounded-sm"
+                            style={{ background: c }}
+                          />
+                        ))}
+                      </div>
+                      <span
+                        style={{
+                          color: t.id === "light" ? "#24292f" : "#c9d1d9",
+                        }}
+                      >
+                        {t.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Device + Stats */}
-            <div className="flex gap-3 flex-wrap">
-              <div className="flex-1 min-w-[150px]">
-                <Label className="mb-1.5">Device</Label>
-                <Select value={device} onValueChange={setDevice}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {devices.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-1 min-w-[150px]">
-                <Label className="mb-1.5">Show Stats</Label>
-                <Select value={showStats} onValueChange={setShowStats}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">Yes</SelectItem>
-                    <SelectItem value="false">No</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          {/* Card 3: Export & Automate */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Export & Automate</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Download CTA */}
+              <Button
+                onClick={handleDownload}
+                disabled={!wallpaperUrl}
+                className="w-full h-10 bg-cyan-600 hover:bg-cyan-700 text-white"
+              >
+                <Download className="size-4" />
+                Download PNG
+              </Button>
 
-            {/* Error */}
-            {error && (
-              <p className="text-destructive text-sm">{error}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Center — Shortcut URL / Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">iOS Shortcut URL</CardTitle>
-            <CardDescription className="text-xs">
-              Use this URL in an iOS Shortcut to auto-update your wallpaper.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {wallpaperUrl ? (
-              <>
-                <Input
-                  readOnly
-                  value={wallpaperUrl}
-                  className="font-mono text-xs text-green-400"
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                />
-                <div className="flex flex-col gap-2">
+              {/* Shortcut URL */}
+              <div className="space-y-2">
+                <CardDescription className="text-xs">
+                  iOS Shortcut URL for auto-updating wallpaper
+                </CardDescription>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={wallpaperUrl || ""}
+                    placeholder="Generate a wallpaper first..."
+                    className="h-10 font-mono text-xs text-green-400 flex-1"
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                  />
                   <Button
-                    variant="secondary"
+                    variant="outline"
                     onClick={handleCopy}
-                    className="w-full"
+                    disabled={!wallpaperUrl}
+                    className="h-10 shrink-0"
                   >
                     <Copy className="size-4" />
-                    {copied ? "Copied!" : "Copy URL"}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={handleDownload}
-                    className="w-full"
-                  >
-                    <Download className="size-4" />
-                    Download PNG
+                    {copied ? "Copied!" : "Copy"}
                   </Button>
                 </div>
-              </>
-            ) : (
-              <p className="text-xs text-muted-foreground text-center py-4">
-                Generate a wallpaper to get your shortcut URL
-              </p>
-            )}
-          </CardContent>
-        </Card>
+              </div>
 
-        {/* Right — Phone Preview */}
-        <div className="flex justify-center lg:justify-start">
-          <div className="w-[200px] h-full min-h-[420px] rounded-3xl overflow-hidden border-[3px] border-border bg-background relative shrink-0">
+              {/* Collapsible guide */}
+              <button
+                onClick={() => setShowGuide(!showGuide)}
+                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full cursor-pointer"
+              >
+                <ChevronDown
+                  className={`size-3.5 transition-transform ${
+                    showGuide ? "rotate-180" : ""
+                  }`}
+                />
+                How do I automate this?
+              </button>
+
+              {showGuide && (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                  {steps.map((step, i) => (
+                    <div
+                      key={i}
+                      className="text-center space-y-1.5 p-3 rounded-lg bg-muted/50"
+                    >
+                      <div className="mx-auto flex size-7 items-center justify-center rounded-full bg-cyan-600 text-white text-xs font-bold">
+                        {i + 1}
+                      </div>
+                      <h4 className="text-xs font-medium">{step.title}</h4>
+                      <p className="text-[11px] text-muted-foreground leading-snug">
+                        {step.desc}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* RIGHT — Sticky Phone Preview */}
+        <div className="flex justify-center lg:sticky lg:top-8 lg:self-start">
+          <div className="w-[260px] h-[562px] rounded-[2.5rem] overflow-hidden border-[3px] border-border bg-[#0d1117] relative shadow-2xl shadow-black/40">
+            {/* Notch */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[90px] h-[28px] bg-black rounded-b-2xl z-10" />
+
             {loading && (
               <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                <Loader2 className="size-6 animate-spin" />
+                <Loader2 className="size-8 animate-spin" />
               </div>
             )}
             {!loading && !previewSrc && (
-              <div className="flex items-center justify-center h-full text-muted-foreground text-sm text-center px-5">
-                Enter your GitHub username and click Generate
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground px-8 gap-4">
+                <Smartphone className="size-10 opacity-30" />
+                <p className="text-sm text-center opacity-60">
+                  Enter your GitHub username and click Generate
+                </p>
               </div>
             )}
             {previewSrc && (
@@ -311,38 +356,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Setup Guide */}
-      <Card className="mb-6 max-w-[800px] mx-auto">
-        <CardHeader>
-          <CardTitle>Set Up Auto-Updating Wallpaper</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="relative ml-3">
-            {steps.map((step, i) => (
-              <div
-                key={i}
-                className={`relative pl-10 pb-6 ${
-                  i < steps.length - 1 ? "border-l-2 border-border" : ""
-                }`}
-              >
-                <div className="absolute -left-[13px] top-0 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                  {i + 1}
-                </div>
-                <h3 className="text-sm font-medium">{step.title}</h3>
-                <p className="text-sm text-muted-foreground">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Footer */}
-      <footer className="text-center py-10 text-muted-foreground text-xs">
+      <footer className="text-center py-8 text-muted-foreground text-xs">
         <p>
           GitWall &mdash; open source on{" "}
           <a
             href="https://github.com"
-            className="text-green-400 hover:underline"
+            className="text-cyan-400 hover:underline"
           >
             GitHub
           </a>
