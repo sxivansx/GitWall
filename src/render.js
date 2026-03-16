@@ -1,6 +1,11 @@
-const { createCanvas } = require("canvas");
+const { createCanvas, registerFont } = require("canvas");
 const { getTheme } = require("./themes");
 const { getDevice } = require("./devices");
+const path = require("path");
+
+const fontsDir = path.join(process.cwd(), "fonts");
+registerFont(path.join(fontsDir, "Inter-Regular.ttf"), { family: "Inter" });
+registerFont(path.join(fontsDir, "Inter-Bold.ttf"), { family: "Inter", weight: "bold" });
 
 function getContributionLevel(count) {
   if (count === 0) return -1;
@@ -47,7 +52,7 @@ function renderWallpaper(calendar, options = {}) {
 
   // Draw month labels
   ctx.fillStyle = theme.subtext;
-  ctx.font = `${Math.floor(14 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  ctx.font = `${Math.floor(14 * scale)}px Inter`;
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   let lastMonth = -1;
   for (let w = 0; w < weeks.length; w++) {
@@ -80,7 +85,7 @@ function renderWallpaper(calendar, options = {}) {
   // Username title
   if (user) {
     ctx.fillStyle = theme.text;
-    ctx.font = `bold ${Math.floor(28 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.font = `bold ${Math.floor(28 * scale)}px Inter`;
     ctx.textAlign = "center";
     ctx.fillText(`@${user}`, width / 2, gridY - Math.floor(50 * scale));
     ctx.textAlign = "left";
@@ -91,12 +96,12 @@ function renderWallpaper(calendar, options = {}) {
     const statsY = gridY + gridHeight + Math.floor(60 * scale);
 
     ctx.fillStyle = theme.text;
-    ctx.font = `bold ${Math.floor(42 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.font = `bold ${Math.floor(42 * scale)}px Inter`;
     ctx.textAlign = "center";
     ctx.fillText(`${totalContributions.toLocaleString()}`, width / 2, statsY);
 
     ctx.fillStyle = theme.subtext;
-    ctx.font = `${Math.floor(16 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.font = `${Math.floor(16 * scale)}px Inter`;
     ctx.fillText("contributions in the last year", width / 2, statsY + Math.floor(30 * scale));
 
     // Current streak and today's contributions
@@ -109,18 +114,18 @@ function renderWallpaper(calendar, options = {}) {
 
     // Today
     ctx.fillStyle = theme.text;
-    ctx.font = `bold ${Math.floor(28 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.font = `bold ${Math.floor(28 * scale)}px Inter`;
     ctx.fillText(`${todayCount}`, width / 2 - statSpacing / 2, statRowY);
     ctx.fillStyle = theme.subtext;
-    ctx.font = `${Math.floor(14 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.font = `${Math.floor(14 * scale)}px Inter`;
     ctx.fillText("today", width / 2 - statSpacing / 2, statRowY + Math.floor(22 * scale));
 
     // Streak
     ctx.fillStyle = theme.text;
-    ctx.font = `bold ${Math.floor(28 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.font = `bold ${Math.floor(28 * scale)}px Inter`;
     ctx.fillText(`${streak}`, width / 2 + statSpacing / 2, statRowY);
     ctx.fillStyle = theme.subtext;
-    ctx.font = `${Math.floor(14 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.font = `${Math.floor(14 * scale)}px Inter`;
     ctx.fillText("day streak", width / 2 + statSpacing / 2, statRowY + Math.floor(22 * scale));
 
     ctx.textAlign = "left";
@@ -135,7 +140,7 @@ function renderWallpaper(calendar, options = {}) {
   const legendStartX = (width - legendWidth - Math.floor(80 * scale)) / 2;
 
   ctx.fillStyle = theme.subtext;
-  ctx.font = `${Math.floor(12 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  ctx.font = `${Math.floor(12 * scale)}px Inter`;
   ctx.fillText("Less", legendStartX, legendY + legendCellSize / 2 + 4 * scale);
 
   const cellsStartX = legendStartX + Math.floor(40 * scale);
@@ -149,7 +154,7 @@ function renderWallpaper(calendar, options = {}) {
 
   // Watermark
   ctx.fillStyle = theme.subtext;
-  ctx.font = `${Math.floor(11 * scale)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  ctx.font = `${Math.floor(11 * scale)}px Inter`;
   ctx.textAlign = "center";
   ctx.fillText("GitWall", width / 2, height - Math.floor(30 * scale));
   ctx.textAlign = "left";

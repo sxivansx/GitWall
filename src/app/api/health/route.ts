@@ -6,6 +6,5 @@ export async function GET() {
   return NextResponse.json({
     status: "ok",
     uptime: Math.floor((Date.now() - startTime) / 1000),
-    hasToken: !!process.env.GITHUB_TOKEN,
-  });
+});
 }
