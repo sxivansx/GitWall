@@ -1,0 +1,19 @@
+{
+  "name": "gitwall",
+  "version": "1.0.0",
+  "description": "Generate iPhone wallpapers from your GitHub contribution graph",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "canvas": "^3.2.1",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  }
+}
