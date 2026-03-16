@@ -49,7 +49,7 @@ const steps = [
   },
   {
     title: "Create an iOS Shortcut",
-    desc: 'Open the Shortcuts app → New Shortcut → Add "Get Contents of URL" action with the copied URL.',
+    desc: 'Open the Shortcuts app \u2192 New Shortcut \u2192 Add "Get Contents of URL" action with the copied URL.',
   },
   {
     title: "Set the wallpaper",
@@ -57,7 +57,7 @@ const steps = [
   },
   {
     title: "Automate it",
-    desc: "Go to Automation → Create Personal Automation → Time of Day → set it to run daily → run your shortcut.",
+    desc: "Go to Automation \u2192 Create Personal Automation \u2192 Time of Day \u2192 set it to run daily \u2192 run your shortcut.",
   },
 ];
 
@@ -102,7 +102,8 @@ export default function Home() {
       setPreviewSrc(URL.createObjectURL(blob));
       setWallpaperUrl(fullUrl);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Something went wrong";
+      const message =
+        err instanceof Error ? err.message : "Something went wrong";
       setError(message);
     } finally {
       setLoading(false);
@@ -127,9 +128,9 @@ export default function Home() {
   }, [wallpaperUrl, username]);
 
   return (
-    <div className="mx-auto max-w-[900px] px-5 py-10">
-      {/* Header */}
-      <header className="mb-12 text-center">
+    <div className="mx-auto max-w-[1200px] px-5 py-10">
+      {/* Hero */}
+      <header className="mb-10 text-center">
         <h1 className="mb-2 text-4xl font-bold tracking-tight bg-gradient-to-br from-green-400 to-blue-400 bg-clip-text text-transparent">
           GitWall
         </h1>
@@ -138,164 +139,180 @@ export default function Home() {
         </p>
       </header>
 
-      {/* Form Card */}
-      <Card className="mb-6">
-        <CardContent className="space-y-5">
-          {/* Username + Generate */}
-          <div className="flex gap-3 items-end">
-            <div className="flex-1">
-              <Label htmlFor="username" className="mb-1.5">
-                GitHub Username
-              </Label>
-              <Input
-                id="username"
-                placeholder="e.g. torvalds"
-                autoComplete="off"
-                spellCheck={false}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && generate()}
-              />
+      {/* Main 3-column row */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_auto] gap-6 items-start mb-10">
+        {/* Left — Form Card */}
+        <Card>
+          <CardContent className="space-y-5">
+            {/* Username + Generate */}
+            <div className="flex gap-3 items-end">
+              <div className="flex-1">
+                <Label htmlFor="username" className="mb-1.5">
+                  GitHub Username
+                </Label>
+                <Input
+                  id="username"
+                  placeholder="e.g. torvalds"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && generate()}
+                />
+              </div>
+              <Button onClick={generate} disabled={loading} size="lg">
+                {loading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  "Generate"
+                )}
+              </Button>
             </div>
-            <Button onClick={generate} disabled={loading} size="lg">
-              {loading ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                "Generate"
-              )}
-            </Button>
-          </div>
 
-          {/* Theme Swatches */}
-          <div>
-            <Label className="mb-1.5">Theme</Label>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-2">
-              {themes.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setSelectedTheme(t.id)}
-                  className={`rounded-lg p-2 text-center text-xs transition-all cursor-pointer border-2 ${
-                    selectedTheme === t.id
-                      ? "border-green-500"
-                      : "border-transparent"
-                  }`}
-                  style={{ background: t.background }}
-                >
-                  <div className="flex justify-center gap-1 mb-1">
-                    {t.colors.map((c, i) => (
-                      <span
-                        key={i}
-                        className="size-3 rounded-sm"
-                        style={{ background: c }}
-                      />
-                    ))}
-                  </div>
-                  <span
-                    style={{
-                      color: t.id === "light" ? "#24292f" : "#c9d1d9",
-                    }}
+            {/* Theme Swatches */}
+            <div>
+              <Label className="mb-1.5">Theme</Label>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-2">
+                {themes.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setSelectedTheme(t.id)}
+                    className={`rounded-lg p-2 text-center text-xs transition-all cursor-pointer border-2 ${
+                      selectedTheme === t.id
+                        ? "border-green-500"
+                        : "border-transparent"
+                    }`}
+                    style={{ background: t.background }}
                   >
-                    {t.name}
-                  </span>
-                </button>
-              ))}
+                    <div className="flex justify-center gap-1 mb-1">
+                      {t.colors.map((c, i) => (
+                        <span
+                          key={i}
+                          className="size-3 rounded-sm"
+                          style={{ background: c }}
+                        />
+                      ))}
+                    </div>
+                    <span
+                      style={{
+                        color: t.id === "light" ? "#24292f" : "#c9d1d9",
+                      }}
+                    >
+                      {t.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Device + Stats */}
-          <div className="flex gap-3 flex-wrap">
-            <div className="flex-1 min-w-[150px]">
-              <Label className="mb-1.5">Device</Label>
-              <Select value={device} onValueChange={setDevice}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {devices.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Device + Stats */}
+            <div className="flex gap-3 flex-wrap">
+              <div className="flex-1 min-w-[150px]">
+                <Label className="mb-1.5">Device</Label>
+                <Select value={device} onValueChange={setDevice}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {devices.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1 min-w-[150px]">
+                <Label className="mb-1.5">Show Stats</Label>
+                <Select value={showStats} onValueChange={setShowStats}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Yes</SelectItem>
+                    <SelectItem value="false">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex-1 min-w-[150px]">
-              <Label className="mb-1.5">Show Stats</Label>
-              <Select value={showStats} onValueChange={setShowStats}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">Yes</SelectItem>
-                  <SelectItem value="false">No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Error */}
-      {error && (
-        <p className="text-destructive text-sm mb-4">{error}</p>
-      )}
+            {/* Error */}
+            {error && (
+              <p className="text-destructive text-sm">{error}</p>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Phone Preview */}
-      <div className="flex justify-center py-6">
-        <div className="w-[195px] h-[422px] rounded-3xl overflow-hidden border-[3px] border-border bg-background relative">
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-              <Loader2 className="size-6 animate-spin" />
-            </div>
-          )}
-          {!loading && !previewSrc && (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-sm text-center px-5">
-              Enter your GitHub username and click Generate
-            </div>
-          )}
-          {previewSrc && (
-            <img
-              src={previewSrc}
-              alt="Wallpaper preview"
-              className="w-full h-full object-cover"
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Shortcut URL Section */}
-      {wallpaperUrl && (
-        <Card className="mb-6">
+        {/* Center — Shortcut URL / Actions */}
+        <Card className="w-full lg:w-[280px] self-stretch">
           <CardHeader>
-            <CardTitle>iOS Shortcut URL</CardTitle>
-            <CardDescription>
-              Use this URL in an iOS Shortcut to automatically update your
-              wallpaper daily.
+            <CardTitle className="text-sm">iOS Shortcut URL</CardTitle>
+            <CardDescription className="text-xs">
+              Use this URL in an iOS Shortcut to auto-update your wallpaper.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Input
-              readOnly
-              value={wallpaperUrl}
-              className="font-mono text-xs text-green-400"
-              onClick={(e) => (e.target as HTMLInputElement).select()}
-            />
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={handleCopy}>
-                <Copy className="size-4" />
-                {copied ? "Copied!" : "Copy URL"}
-              </Button>
-              <Button variant="secondary" onClick={handleDownload}>
-                <Download className="size-4" />
-                Download PNG
-              </Button>
-            </div>
+            {wallpaperUrl ? (
+              <>
+                <Input
+                  readOnly
+                  value={wallpaperUrl}
+                  className="font-mono text-xs text-green-400"
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                />
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={handleCopy}
+                    className="w-full"
+                  >
+                    <Copy className="size-4" />
+                    {copied ? "Copied!" : "Copy URL"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={handleDownload}
+                    className="w-full"
+                  >
+                    <Download className="size-4" />
+                    Download PNG
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-4">
+                Generate a wallpaper to get your shortcut URL
+              </p>
+            )}
           </CardContent>
         </Card>
-      )}
+
+        {/* Right — Phone Preview */}
+        <div className="flex justify-center lg:justify-start">
+          <div className="w-[195px] h-[422px] rounded-3xl overflow-hidden border-[3px] border-border bg-background relative shrink-0">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                <Loader2 className="size-6 animate-spin" />
+              </div>
+            )}
+            {!loading && !previewSrc && (
+              <div className="flex items-center justify-center h-full text-muted-foreground text-sm text-center px-5">
+                Enter your GitHub username and click Generate
+              </div>
+            )}
+            {previewSrc && (
+              <img
+                src={previewSrc}
+                alt="Wallpaper preview"
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Setup Guide */}
-      <Card className="mb-6">
+      <Card className="mb-6 max-w-[800px] mx-auto">
         <CardHeader>
           <CardTitle>Set Up Auto-Updating Wallpaper</CardTitle>
         </CardHeader>
@@ -305,9 +322,7 @@ export default function Home() {
               <div
                 key={i}
                 className={`relative pl-10 pb-6 ${
-                  i < steps.length - 1
-                    ? "border-l-2 border-border"
-                    : ""
+                  i < steps.length - 1 ? "border-l-2 border-border" : ""
                 }`}
               >
                 <div className="absolute -left-[13px] top-0 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
