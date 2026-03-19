@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,6 +66,25 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [autoDetected, setAutoDetected] = useState(false);
+
+  useEffect(() => {
+    if (!/iPhone/.test(navigator.userAgent)) return;
+    const w = Math.min(screen.width, screen.height);
+    const h = Math.max(screen.width, screen.height);
+    const map: Record<string, string> = {
+      "390x844": "iphone14",
+      "393x852": "iphone16",
+      "402x874": "iphone16pro",
+      "430x932": "iphone15promax",
+      "440x956": "iphone16promax",
+    };
+    const detected = map[`${w}x${h}`];
+    if (detected) {
+      setDevice(detected);
+      setAutoDetected(true);
+    }
+  }, []);
 
   const generate = useCallback(async () => {
     const user = username.trim();
@@ -184,7 +203,14 @@ export default function Home() {
               {/* Device + Stats row */}
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <Label className="mb-2">Device</Label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Label>Device</Label>
+                    {autoDetected && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-600/20 text-cyan-400 font-medium">
+                        auto-detected
+                      </span>
+                    )}
+                  </div>
                   <Select value={device} onValueChange={setDevice}>
                     <SelectTrigger className="w-full h-10">
                       <SelectValue />
