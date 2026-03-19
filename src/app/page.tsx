@@ -387,7 +387,7 @@ export default function Home() {
         <p>
           GitWall &mdash; open source on{" "}
           <a
-            href="https://github.com"
+            href="https://github.com/sxivansx/GitWall"
             className="text-cyan-400 hover:underline"
           >
             GitHub
