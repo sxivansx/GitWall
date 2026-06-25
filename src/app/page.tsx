@@ -118,12 +118,8 @@ export default function Home() {
   return (
     <div className={`min-h-screen bg-[#0a0a0a] text-white ${jakarta.className}`}>
 
-      {/* Top nav */}
-      <nav className="flex items-center justify-center h-14 border-b border-white/[0.06]">
-        <span className="text-sm font-medium text-white/60 tracking-wide">GitWall</span>
-      </nav>
 
-      <div className="mx-auto max-w-[1060px] px-6">
+<div className="mx-auto max-w-[1060px] px-6">
 
         {/* Hero */}
         <header className="pt-16 pb-14 border-b border-white/[0.06]">
@@ -312,7 +308,7 @@ export default function Home() {
 
           {/* RIGHT: Phone Preview */}
           <div className="flex justify-center lg:sticky lg:top-8 lg:self-start">
-            <div className="w-[240px] h-[520px] border border-white/[0.1] bg-[#0d1117] relative overflow-hidden rounded-[2.2rem] shadow-2xl shadow-black/60">
+            <div className="w-[240px] h-[520px] border border-white/[0.1] bg-[#0d1117] relative overflow-hidden rounded-[2.2rem] shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
               <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[72px] h-[20px] bg-black rounded-full z-10" />
 
               {loading && (
