@@ -16,11 +16,18 @@ function getContributionLevel(count) {
 }
 
 function renderWallpaper(calendar, options = {}) {
-  const { theme: themeName = "classic", device: deviceName = "iphone14", stats = true, user = "" } = options;
+  const { theme: themeName = "classic", device: deviceName = "iphone14", stats = true, user = "", customWidth, customHeight } = options;
 
   const theme = getTheme(themeName);
-  const device = getDevice(deviceName);
-  const { width, height } = device;
+  let width, height;
+  if (customWidth && customHeight) {
+    width = customWidth;
+    height = customHeight;
+  } else {
+    const device = getDevice(deviceName);
+    width = device.width;
+    height = device.height;
+  }
 
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");

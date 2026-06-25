@@ -10,6 +10,10 @@ export async function GET(request: NextRequest) {
   const statsParam = searchParams.get("stats");
   const device = searchParams.get("device") || "iphone14";
 
+  // Custom width/height override (for Android devices)
+  const customWidth = searchParams.get("width");
+  const customHeight = searchParams.get("height");
+
   if (!user) {
     return NextResponse.json(
       { error: "Missing required parameter: user" },
@@ -18,13 +22,22 @@ export async function GET(request: NextRequest) {
   }
 
   const stats = statsParam !== "false";
-  const cacheKey = `${user}:${theme}:${stats}:${device}`;
+  const cacheKey = customWidth && customHeight
+    ? `${user}:${theme}:${stats}:custom:${customWidth}x${customHeight}`
+    : `${user}:${theme}:${stats}:${device}`;
 
   try {
     let png = getCached(cacheKey);
     if (!png) {
       const calendar = await fetchContributions(user);
-      png = renderWallpaper(calendar, { theme, device, stats, user });
+      const renderOptions: Record<string, unknown> = { theme, stats, user };
+      if (customWidth && customHeight) {
+        renderOptions.customWidth = parseInt(customWidth);
+        renderOptions.customHeight = parseInt(customHeight);
+      } else {
+        renderOptions.device = device;
+      }
+      png = renderWallpaper(calendar, renderOptions);
       setCache(cacheKey, png);
     }
 
