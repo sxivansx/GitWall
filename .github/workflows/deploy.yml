@@ -1,0 +1,35 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd GitWall
+            git pull origin main
+            docker build -t gitwall .
+            docker stop gitwall || true
+            docker rm gitwall || true
+            docker run -d -p 3000:3000 --name gitwall --restart unless-stopped gitwall
+            
+            # Wait for container to start
+            echo "Waiting for Next.js server to start..."
+            sleep 10
+            
+            # Health check
+            if ! curl -f http://localhost:3000/api/health; then
+              echo "Health check failed!"
+              exit 1
+            fi
+            echo "Health check passed!"
