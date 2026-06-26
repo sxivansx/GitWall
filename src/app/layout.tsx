@@ -19,6 +19,7 @@ const description =
   "Generate iPhone wallpapers from your GitHub contribution graph, with auto-updating lock screen support via iOS Shortcuts.";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://gitwall.space"),
   title,
   description,
   keywords: [
