@@ -46,12 +46,28 @@ export const ANDROID_DEVICES: AndroidDevice[] = [
   { id: "galaxy-s22-ultra", name: "Samsung Galaxy S22 Ultra", brand: "Samsung", width: 1440, height: 3088 },
   { id: "galaxy-s22-plus", name: "Samsung Galaxy S22+", brand: "Samsung", width: 1080, height: 2340 },
   { id: "galaxy-s22", name: "Samsung Galaxy S22", brand: "Samsung", width: 1080, height: 2340 },
+  // ── Samsung Galaxy S FE (Fan Edition) ────────────────────────────────
+  { id: "galaxy-s24-fe", name: "Samsung Galaxy S24 FE", brand: "Samsung", width: 1080, height: 2340 },
+  { id: "galaxy-s23-fe", name: "Samsung Galaxy S23 FE", brand: "Samsung", width: 1080, height: 2340 },
+  { id: "galaxy-s21-fe", name: "Samsung Galaxy S21 FE", brand: "Samsung", width: 1080, height: 2400 },
+  { id: "galaxy-s20-fe", name: "Samsung Galaxy S20 FE", brand: "Samsung", width: 1080, height: 2400 },
+  // ── Samsung Galaxy Z Fold ─────────────────────────────────────────────
+  { id: "galaxy-z-fold-6", name: "Samsung Galaxy Z Fold 6", brand: "Samsung", width: 968, height: 2376 },
+  { id: "galaxy-z-fold-5", name: "Samsung Galaxy Z Fold 5", brand: "Samsung", width: 904, height: 2316 },
+  // ── Samsung Galaxy Z Flip ─────────────────────────────────────────────
+  { id: "galaxy-z-flip-6", name: "Samsung Galaxy Z Flip 6", brand: "Samsung", width: 1080, height: 2640 },
+  { id: "galaxy-z-flip-5", name: "Samsung Galaxy Z Flip 5", brand: "Samsung", width: 1080, height: 2640 },
   // ── Samsung Galaxy A Series ──────────────────────────────────────────
+  { id: "galaxy-a56", name: "Samsung Galaxy A56", brand: "Samsung", width: 1080, height: 2340 },
   { id: "galaxy-a55", name: "Samsung Galaxy A55", brand: "Samsung", width: 1080, height: 2340 },
-  { id: "galaxy-a54", name: "Samsung Galaxy A54", brand: "Samsung", width: 1080, height: 2340 },
+  { id: "galaxy-a54", name: "Samsung Galaxy A54", brand: "Samsung", width: 1080, height: 2408 },
+  { id: "galaxy-a53", name: "Samsung Galaxy A53", brand: "Samsung", width: 1080, height: 2408 },
+  { id: "galaxy-a36", name: "Samsung Galaxy A36", brand: "Samsung", width: 1080, height: 2340 },
   { id: "galaxy-a35", name: "Samsung Galaxy A35", brand: "Samsung", width: 1080, height: 2340 },
   { id: "galaxy-a25", name: "Samsung Galaxy A25", brand: "Samsung", width: 1080, height: 2340 },
+  { id: "galaxy-a16", name: "Samsung Galaxy A16", brand: "Samsung", width: 1080, height: 2340 },
   { id: "galaxy-a15", name: "Samsung Galaxy A15", brand: "Samsung", width: 1080, height: 2340 },
+  { id: "galaxy-a14", name: "Samsung Galaxy A14", brand: "Samsung", width: 1080, height: 2408 },
   // ── Google Pixel ─────────────────────────────────────────────────────
   { id: "pixel-9-pro-xl", name: "Google Pixel 9 Pro XL", brand: "Google", width: 1344, height: 2992 },
   { id: "pixel-9-pro", name: "Google Pixel 9 Pro", brand: "Google", width: 1280, height: 2856 },
