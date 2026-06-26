@@ -12,143 +12,155 @@ export const size = {
 export const contentType = "image/png";
 
 export default async function Image() {
-  const levels = ["#161C23", "#023A16", "#196E2D", "#2CA044", "#39d353"];
+  // Using the vibrant 'Sunset' theme to make it look incredibly cool
+  const bg = "#1a1a2e";
+  const levels = ["#16213e", "#e94560", "#f27121", "#e9724c", "#ffc857"];
 
-  // Generate a deterministic pattern for the background grid
-  const boxes = Array.from({ length: 400 }).map((_, i) => {
-    // Pseudo-random but deterministic index based on position
-    const colorIndex = (Math.sin(i) * 10000) % 5;
-    const absIndex = Math.floor(Math.abs(colorIndex));
-    return levels[absIndex];
+  // Generate a deterministic pattern for the phone's grid
+  const boxes = Array.from({ length: 300 }).map((_, i) => {
+    // Creating a wave-like pattern of contributions
+    const val = Math.sin(i / 5) * Math.cos(i / 10);
+    let level = 0;
+    if (val > 0.8) level = 4;
+    else if (val > 0.4) level = 3;
+    else if (val > 0) level = 2;
+    else if (val > -0.5) level = 1;
+    
+    return levels[level];
   });
 
   return new ImageResponse(
     (
       <div
         style={{
-          background: "#0C1116",
+          background: "#0d0d0d", // Deep dark background
           width: "100%",
           height: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "flex-start",
           fontFamily: "sans-serif",
           color: "#ffffff",
-          position: "relative",
+          paddingTop: "60px",
         }}
       >
-        {/* Background decorative grid */}
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            position: "absolute",
-            top: -50,
-            left: -50,
-            opacity: 0.25,
-            flexWrap: "wrap",
-            width: "1300px",
-          }}
-        >
-          {boxes.map((color, i) => (
-            <div
-              key={i}
-              style={{
-                width: "28px",
-                height: "28px",
-                borderRadius: "6px",
-                background: color,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Foreground Content */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            zIndex: 10,
-            background: "rgba(12, 17, 22, 0.8)",
-            padding: "60px 80px",
-            borderRadius: "30px",
-            border: "1px solid #30363d",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7)",
-          }}
-        >
+        {/* Title & Subtitle */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <h1
             style={{
-              fontSize: "110px",
+              fontSize: "64px",
               fontWeight: "bold",
               margin: 0,
               padding: 0,
-              letterSpacing: "-0.05em",
+              letterSpacing: "-0.02em",
             }}
           >
             GitWall
           </h1>
           <p
             style={{
-              fontSize: "42px",
-              color: "#8b949e",
-              marginTop: "20px",
-              textAlign: "center",
-              maxWidth: "800px",
-              lineHeight: 1.4,
+              fontSize: "32px",
+              color: "#888888",
+              marginTop: "16px",
+              margin: 0,
             }}
           >
-            Generate beautiful iPhone wallpapers from your GitHub contribution graph
+            Generate iPhone wallpapers from your GitHub contribution graph
           </p>
+        </div>
 
-          <div style={{ display: "flex", marginTop: "50px", gap: "16px" }}>
+        {/* iPhone Mockup Container */}
+        <div
+          style={{
+            marginTop: "50px",
+            width: "320px",
+            height: "650px", // Pushes off the bottom of the image slightly for a cool effect
+            borderRadius: "48px",
+            background: bg,
+            border: "8px solid #222222",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            position: "relative",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
+            overflow: "hidden",
+          }}
+        >
+          {/* Dynamic Island */}
+          <div
+            style={{
+              position: "absolute",
+              top: "12px",
+              width: "100px",
+              height: "28px",
+              background: "#000000",
+              borderRadius: "14px",
+              zIndex: 10,
+            }}
+          />
+
+          {/* Lock Screen Time */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              marginTop: "70px",
+            }}
+          >
+            <div style={{ fontSize: "16px", color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
+              Wednesday, October 28
+            </div>
             <div
               style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "10px",
-                background: levels[0],
-                border: "1px solid rgba(255,255,255,0.1)",
+                fontSize: "76px",
+                fontWeight: "bold",
+                color: "rgba(255,255,255,0.9)",
+                marginTop: "-10px",
+                letterSpacing: "-0.04em",
               }}
-            />
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "10px",
-                background: levels[1],
-                border: "1px solid rgba(255,255,255,0.1)",
-              }}
-            />
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "10px",
-                background: levels[2],
-                border: "1px solid rgba(255,255,255,0.1)",
-              }}
-            />
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "10px",
-                background: levels[3],
-                border: "1px solid rgba(255,255,255,0.1)",
-              }}
-            />
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "10px",
-                background: levels[4],
-                border: "1px solid rgba(255,255,255,0.1)",
-              }}
-            />
+            >
+              9:41
+            </div>
           </div>
+
+          {/* GitHub Graph Grid inside the phone */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "4px",
+              padding: "0 16px",
+              marginTop: "30px",
+              justifyContent: "center",
+              width: "100%",
+            }}
+          >
+            {boxes.map((color, i) => (
+              <div
+                key={i}
+                style={{
+                  width: "12px",
+                  height: "12px",
+                  borderRadius: "2px",
+                  background: color,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Bottom Bar indicator */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: "16px",
+              width: "120px",
+              height: "4px",
+              background: "rgba(255,255,255,0.8)",
+              borderRadius: "2px",
+            }}
+          />
         </div>
       </div>
     ),
