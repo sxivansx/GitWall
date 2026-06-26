@@ -64,12 +64,12 @@ Open `http://localhost:3000`, enter a GitHub username, pick your platform (iPhon
 **Android (MacroDroid)**
 1. Generate your wallpaper, select your phone model, and copy the MacroDroid URL
 2. Install [MacroDroid](https://play.google.com/store/apps/details?id=com.arlosoft.macrodroid) from Google Play
-3. Add Macro → Trigger: Date/Time → Daily at 00:01
-4. Action 1: HTTP Request (GET) → save response to `/Download/gitwall.png`
-5. Action 2: Device Settings → Set Wallpaper → `/Download/gitwall.png`
+3. Add Macro → Trigger: Date/Time → Daily at 00:00:01
+4. Action 1: Web Interactions → HTTP Request (GET) → paste URL → ✅ check **"Block next actions until complete"** → Response: Save to file → **Storage Access Framework** → pick any folder (e.g. Pictures) → filename: `gitwall.png`
+5. Action 2: Device Settings → Set Wallpaper → browse to the same folder → `gitwall.png`
 6. Name the macro and tap **Create Macro**
 
-> Use the **exact same filename** in both actions.
+> Use **Storage Access Framework** (not All File Access) — modern Android blocks direct `/Download/` path access. Pick the same folder in both actions.
 
 ## Tech Stack
 

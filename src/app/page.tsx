@@ -133,10 +133,10 @@ const iosSteps = [
 ];
 
 const androidSteps = [
-  { title: "Generate", desc: "Pick your Android model, theme, then generate." },
+  { title: "Generate", desc: "Pick your Android model, theme, then generate and copy the URL." },
   { title: "Install MacroDroid", desc: "Get MacroDroid free from Google Play Store." },
-  { title: "Add Macro", desc: "Trigger: Date/Time → Daily 00:01. Action: HTTP Request → save to /Download/gitwall.png, then Set Wallpaper." },
-  { title: "Create & Test", desc: 'Name the macro → "Create Macro". Test it via More options → Test macro.' },
+  { title: "HTTP Request Action", desc: 'Web Interactions → HTTP Request → GET → paste URL. ✓ Check \"Block next actions until complete\". Response: Save to file → Storage Access Framework → pick any folder → filename: gitwall.png.' },
+  { title: "Set Wallpaper Action", desc: 'Device Settings → Set Wallpaper → browse to the same folder and file (gitwall.png). Name the macro → Create Macro.' },
 ];
 
 export default function Home() {
@@ -567,7 +567,7 @@ export default function Home() {
                   {platform === "android" && (
                     <div className="mt-3 p-3.5 bg-amber-500/[0.06] border border-amber-500/20 rounded-lg">
                       <p className="text-[11px] text-amber-400/70 leading-relaxed">
-                        <span className="font-semibold text-amber-400/90">Important:</span> In MacroDroid, use the <span className="font-mono text-amber-300/70">/Download/gitwall.png</span> path in <em>both</em> the HTTP Request and Set Wallpaper actions — the filename must match exactly.
+                        <span className="font-semibold text-amber-400/90">Important:</span> Use <span className="font-semibold text-amber-300/80">Storage Access Framework</span> (not All File Access) — modern Android blocks direct path access. Pick any folder you own (e.g. Pictures), set filename <span className="font-mono text-amber-300/70">gitwall.png</span>, and browse to that <em>same</em> file in the Set Wallpaper action. Also make sure <span className="font-semibold text-amber-300/80">"Block next actions until complete"</span> is checked in the HTTP Request settings.
                       </p>
                     </div>
                   )}
