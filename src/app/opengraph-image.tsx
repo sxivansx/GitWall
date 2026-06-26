@@ -12,28 +12,29 @@ export const size = {
 export const contentType = "image/png";
 
 export default async function Image() {
-  // Using the vibrant 'Sunset' theme to make it look incredibly cool
-  const bg = "#1a1a2e";
-  const levels = ["#16213e", "#e94560", "#f27121", "#e9724c", "#ffc857"];
+  // Authentic GitHub Classic Theme
+  const bg = "#0d1117"; // GitHub dark background
+  const empty = "#161b22";
+  const levels = ["#0e4429", "#006d32", "#26a641", "#39d353"];
 
-  // Generate a deterministic pattern for the phone's grid
-  const boxes = Array.from({ length: 300 }).map((_, i) => {
-    // Creating a wave-like pattern of contributions
-    const val = Math.sin(i / 5) * Math.cos(i / 10);
-    let level = 0;
-    if (val > 0.8) level = 4;
-    else if (val > 0.4) level = 3;
-    else if (val > 0) level = 2;
-    else if (val > -0.5) level = 1;
+  // Generate a random-looking but deterministic GitHub graph pattern
+  // to fill the entire screen of the iPhone
+  const boxes = Array.from({ length: 600 }).map((_, i) => {
+    // 65% chance of being empty, 35% chance of having a contribution
+    const val = (Math.sin(i * 13) * Math.cos(i * 17)) * 100;
     
-    return levels[level];
+    if (val > 80) return levels[3];
+    if (val > 60) return levels[2];
+    if (val > 40) return levels[1];
+    if (val > 20) return levels[0];
+    return empty;
   });
 
   return new ImageResponse(
     (
       <div
         style={{
-          background: "#0d0d0d", // Deep dark background
+          background: "#050505", // Very deep dark background for the canvas
           width: "100%",
           height: "100%",
           display: "flex",
@@ -42,7 +43,7 @@ export default async function Image() {
           justifyContent: "flex-start",
           fontFamily: "sans-serif",
           color: "#ffffff",
-          paddingTop: "60px",
+          paddingTop: "50px",
         }}
       >
         {/* Title & Subtitle */}
@@ -54,15 +55,16 @@ export default async function Image() {
               margin: 0,
               padding: 0,
               letterSpacing: "-0.02em",
+              color: "#ffffff",
             }}
           >
             GitWall
           </h1>
           <p
             style={{
-              fontSize: "32px",
+              fontSize: "30px",
               color: "#888888",
-              marginTop: "16px",
+              marginTop: "12px",
               margin: 0,
             }}
           >
@@ -73,9 +75,9 @@ export default async function Image() {
         {/* iPhone Mockup Container */}
         <div
           style={{
-            marginTop: "50px",
-            width: "320px",
-            height: "650px", // Pushes off the bottom of the image slightly for a cool effect
+            marginTop: "40px",
+            width: "330px",
+            height: "680px", // Pulls it down to simulate the whole phone
             borderRadius: "48px",
             background: bg,
             border: "8px solid #222222",
@@ -83,7 +85,7 @@ export default async function Image() {
             flexDirection: "column",
             alignItems: "center",
             position: "relative",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
+            boxShadow: "0 25px 60px rgba(0,0,0,0.9)",
             overflow: "hidden",
           }}
         >
@@ -107,6 +109,8 @@ export default async function Image() {
               flexDirection: "column",
               alignItems: "center",
               marginTop: "70px",
+              marginBottom: "20px",
+              zIndex: 10,
             }}
           >
             <div style={{ fontSize: "16px", color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
@@ -125,16 +129,16 @@ export default async function Image() {
             </div>
           </div>
 
-          {/* GitHub Graph Grid inside the phone */}
+          {/* Full Screen GitHub Graph Grid */}
           <div
             style={{
               display: "flex",
               flexWrap: "wrap",
-              gap: "4px",
-              padding: "0 16px",
-              marginTop: "30px",
-              justifyContent: "center",
+              gap: "3px",
+              padding: "0 12px", // Tight padding to edge
+              justifyContent: "flex-start",
               width: "100%",
+              height: "100%",
             }}
           >
             {boxes.map((color, i) => (
@@ -149,6 +153,19 @@ export default async function Image() {
               />
             ))}
           </div>
+          
+          {/* Bottom Gradient Fade to make it look like a wallpaper */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: "150px",
+              background: "linear-gradient(to bottom, rgba(13,17,23,0) 0%, rgba(13,17,23,1) 100%)",
+              zIndex: 5,
+            }}
+          />
 
           {/* Bottom Bar indicator */}
           <div
@@ -159,6 +176,7 @@ export default async function Image() {
               height: "4px",
               background: "rgba(255,255,255,0.8)",
               borderRadius: "2px",
+              zIndex: 10,
             }}
           />
         </div>
