@@ -1,146 +1,111 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { Download, Loader2, ChevronRight, Smartphone, Square, Circle, Search, X } from "lucide-react";
+import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
+import { Download, Loader2, Smartphone, Square, Circle, Search, X, Copy, Check } from "lucide-react";
+import { DEVICES, ANDROID_DEVICES, type AndroidDevice } from "@/devices";
+import { THEMES } from "@/themes";
 
 type Theme = { id: string; name: string; colors: string[]; background: string };
 type Device = { id: string; name: string };
 
-// Instant-render fallbacks; the live lists are fetched from the API on mount so
-// new themes/devices added server-side appear without touching this file.
-const FALLBACK_THEMES: Theme[] = [
-  { id: "classic", name: "Classic", colors: ["#023A16", "#196E2D", "#2CA044", "#39d353"], background: "#0C1116" },
-  { id: "light", name: "Light", colors: ["#9be9a8", "#40c463", "#30a14e", "#216e39"], background: "#ffffff" },
-  { id: "dracula", name: "Dracula", colors: ["#6272a4", "#bd93f9", "#ff79c6", "#50fa7b"], background: "#282a36" },
-  { id: "nord", name: "Nord", colors: ["#5e81ac", "#81a1c1", "#88c0d0", "#8fbcbb"], background: "#2e3440" },
-  { id: "ocean", name: "Ocean", colors: ["#1d3461", "#1f5f8b", "#00b4d8", "#90e0ef"], background: "#0a192f" },
-  { id: "sunset", name: "Sunset", colors: ["#e94560", "#f27121", "#e9724c", "#ffc857"], background: "#1a1a2e" },
-  { id: "mono", name: "Mono", colors: ["#404040", "#737373", "#a6a6a6", "#d9d9d9"], background: "#000000" },
-];
+// First-paint fallbacks derived from the same source-of-truth modules the API
+// serves, so there is no second hand-maintained copy to drift. The live lists
+// are still fetched on mount to pick up anything added server-side.
+const FALLBACK_THEMES: Theme[] = Object.entries(THEMES).map(([id, t]) => ({
+  id,
+  name: t.name,
+  colors: t.levels,
+  background: t.background,
+}));
 
-const FALLBACK_DEVICES: Device[] = [
-  { id: "iphone14", name: "iPhone 14" },
-  { id: "iphone14pro", name: "iPhone 14 Pro" },
-  { id: "iphone14promax", name: "iPhone 14 Pro Max" },
-  { id: "iphone15", name: "iPhone 15" },
-  { id: "iphone15pro", name: "iPhone 15 Pro" },
-  { id: "iphone15promax", name: "iPhone 15 Pro Max" },
-  { id: "iphone16", name: "iPhone 16" },
-  { id: "iphone16pro", name: "iPhone 16 Pro" },
-  { id: "iphone16promax", name: "iPhone 16 Pro Max" },
-  { id: "iphoneair", name: "iPhone Air" },
-  { id: "iphone17", name: "iPhone 17" },
-  { id: "iphone17pro", name: "iPhone 17 Pro" },
-  { id: "iphone17promax", name: "iPhone 17 Pro Max" },
-];
+const FALLBACK_DEVICES: Device[] = Object.entries(DEVICES)
+  .filter(([id]) => id !== "preview")
+  .map(([id, d]) => ({ id, name: d.name }));
 
-type AndroidDevice = {
-  id: string;
-  name: string;
-  brand: string;
-  width: number;
-  height: number;
-};
+// A signature of every input that affects the rendered wallpaper. Comparing the
+// current signature to the one that produced the visible preview tells us when
+// the preview is stale (→ show "Regenerate").
+function settingsKey(p: {
+  user: string;
+  theme: string;
+  stats: string;
+  shape: string;
+  platform: string;
+  device: string | undefined;
+}): string {
+  return JSON.stringify(p);
+}
 
-// Full Android device database (mirrors src/devices.js)
-const androidDevices: AndroidDevice[] = [
-  // Samsung S
-  { id: "galaxy-s25-ultra", name: "Samsung Galaxy S25 Ultra", brand: "Samsung", width: 1440, height: 3120 },
-  { id: "galaxy-s25-plus", name: "Samsung Galaxy S25+", brand: "Samsung", width: 1440, height: 3120 },
-  { id: "galaxy-s25", name: "Samsung Galaxy S25", brand: "Samsung", width: 1080, height: 2340 },
-  { id: "galaxy-s24-ultra", name: "Samsung Galaxy S24 Ultra", brand: "Samsung", width: 1440, height: 3120 },
-  { id: "galaxy-s24-plus", name: "Samsung Galaxy S24+", brand: "Samsung", width: 1440, height: 3120 },
-  { id: "galaxy-s24", name: "Samsung Galaxy S24", brand: "Samsung", width: 1080, height: 2340 },
-  { id: "galaxy-s23-ultra", name: "Samsung Galaxy S23 Ultra", brand: "Samsung", width: 1440, height: 3088 },
-  { id: "galaxy-s23-plus", name: "Samsung Galaxy S23+", brand: "Samsung", width: 1080, height: 2340 },
-  { id: "galaxy-s23", name: "Samsung Galaxy S23", brand: "Samsung", width: 1080, height: 2340 },
-  { id: "galaxy-s22-ultra", name: "Samsung Galaxy S22 Ultra", brand: "Samsung", width: 1440, height: 3088 },
-  { id: "galaxy-s22-plus", name: "Samsung Galaxy S22+", brand: "Samsung", width: 1080, height: 2340 },
-  { id: "galaxy-s22", name: "Samsung Galaxy S22", brand: "Samsung", width: 1080, height: 2340 },
-  // Samsung A
-  { id: "galaxy-a55", name: "Samsung Galaxy A55", brand: "Samsung", width: 1080, height: 2340 },
-  { id: "galaxy-a54", name: "Samsung Galaxy A54", brand: "Samsung", width: 1080, height: 2340 },
-  { id: "galaxy-a35", name: "Samsung Galaxy A35", brand: "Samsung", width: 1080, height: 2340 },
-  { id: "galaxy-a25", name: "Samsung Galaxy A25", brand: "Samsung", width: 1080, height: 2340 },
-  { id: "galaxy-a15", name: "Samsung Galaxy A15", brand: "Samsung", width: 1080, height: 2340 },
-  // Google Pixel
-  { id: "pixel-9-pro-xl", name: "Google Pixel 9 Pro XL", brand: "Google", width: 1344, height: 2992 },
-  { id: "pixel-9-pro", name: "Google Pixel 9 Pro", brand: "Google", width: 1280, height: 2856 },
-  { id: "pixel-9", name: "Google Pixel 9", brand: "Google", width: 1080, height: 2424 },
-  { id: "pixel-8-pro", name: "Google Pixel 8 Pro", brand: "Google", width: 1344, height: 2992 },
-  { id: "pixel-8", name: "Google Pixel 8", brand: "Google", width: 1080, height: 2400 },
-  { id: "pixel-8a", name: "Google Pixel 8a", brand: "Google", width: 1080, height: 2400 },
-  { id: "pixel-7-pro", name: "Google Pixel 7 Pro", brand: "Google", width: 1440, height: 3120 },
-  { id: "pixel-7", name: "Google Pixel 7", brand: "Google", width: 1080, height: 2400 },
-  { id: "pixel-7a", name: "Google Pixel 7a", brand: "Google", width: 1080, height: 2310 },
-  { id: "pixel-6-pro", name: "Google Pixel 6 Pro", brand: "Google", width: 1440, height: 3120 },
-  { id: "pixel-6", name: "Google Pixel 6", brand: "Google", width: 1080, height: 2400 },
-  // OnePlus
-  { id: "oneplus-13", name: "OnePlus 13", brand: "OnePlus", width: 1440, height: 3168 },
-  { id: "oneplus-12", name: "OnePlus 12", brand: "OnePlus", width: 1440, height: 3168 },
-  { id: "oneplus-11", name: "OnePlus 11", brand: "OnePlus", width: 1440, height: 3216 },
-  { id: "oneplus-open", name: "OnePlus Open", brand: "OnePlus", width: 1440, height: 3168 },
-  { id: "oneplus-nord-4", name: "OnePlus Nord 4", brand: "OnePlus", width: 1240, height: 2772 },
-  { id: "oneplus-nord-ce4", name: "OnePlus Nord CE 4", brand: "OnePlus", width: 1080, height: 2360 },
-  // Xiaomi
-  { id: "xiaomi-15-pro", name: "Xiaomi 15 Pro", brand: "Xiaomi", width: 1440, height: 3200 },
-  { id: "xiaomi-15", name: "Xiaomi 15", brand: "Xiaomi", width: 1200, height: 2670 },
-  { id: "xiaomi-14-ultra", name: "Xiaomi 14 Ultra", brand: "Xiaomi", width: 1440, height: 3200 },
-  { id: "xiaomi-14-pro", name: "Xiaomi 14 Pro", brand: "Xiaomi", width: 1440, height: 3200 },
-  { id: "xiaomi-14", name: "Xiaomi 14", brand: "Xiaomi", width: 1200, height: 2670 },
-  { id: "redmi-note-13-pro", name: "Redmi Note 13 Pro", brand: "Xiaomi", width: 1220, height: 2712 },
-  { id: "redmi-note-13", name: "Redmi Note 13", brand: "Xiaomi", width: 1080, height: 2400 },
-  // Nothing
-  { id: "nothing-phone-3", name: "Nothing Phone (3)", brand: "Nothing", width: 1260, height: 2800 },
-  { id: "nothing-phone-2a-plus", name: "Nothing Phone (2a) Plus", brand: "Nothing", width: 1080, height: 2412 },
-  { id: "nothing-phone-2a", name: "Nothing Phone (2a)", brand: "Nothing", width: 1080, height: 2412 },
-  { id: "nothing-phone-2", name: "Nothing Phone (2)", brand: "Nothing", width: 1080, height: 2412 },
-  { id: "nothing-phone-1", name: "Nothing Phone (1)", brand: "Nothing", width: 1080, height: 2400 },
-  // Motorola
-  { id: "moto-edge-50-ultra", name: "Motorola Edge 50 Ultra", brand: "Motorola", width: 1220, height: 2712 },
-  { id: "moto-edge-50-pro", name: "Motorola Edge 50 Pro", brand: "Motorola", width: 1220, height: 2712 },
-  { id: "moto-edge-50", name: "Motorola Edge 50", brand: "Motorola", width: 1220, height: 2712 },
-  { id: "moto-edge-40-neo", name: "Motorola Edge 40 Neo", brand: "Motorola", width: 1080, height: 2400 },
-  { id: "moto-g85", name: "Motorola Moto G85", brand: "Motorola", width: 1080, height: 2400 },
-  { id: "moto-g54", name: "Motorola Moto G54", brand: "Motorola", width: 1080, height: 2400 },
-  // Sony
-  { id: "xperia-1-vi", name: "Sony Xperia 1 VI", brand: "Sony", width: 1080, height: 2340 },
-  { id: "xperia-5-v", name: "Sony Xperia 5 V", brand: "Sony", width: 1080, height: 2520 },
-  { id: "xperia-10-vi", name: "Sony Xperia 10 VI", brand: "Sony", width: 1080, height: 2340 },
-  // ASUS
-  { id: "zenfone-11-ultra", name: "ASUS Zenfone 11 Ultra", brand: "ASUS", width: 1080, height: 2400 },
-  { id: "rog-phone-8-pro", name: "ASUS ROG Phone 8 Pro", brand: "ASUS", width: 1080, height: 2400 },
-  // OPPO
-  { id: "oppo-find-x8-pro", name: "OPPO Find X8 Pro", brand: "OPPO", width: 1264, height: 2780 },
-  { id: "oppo-find-x8", name: "OPPO Find X8", brand: "OPPO", width: 1256, height: 2760 },
-  { id: "oppo-reno-12-pro", name: "OPPO Reno 12 Pro", brand: "OPPO", width: 1080, height: 2412 },
-  // vivo
-  { id: "vivo-x200-pro", name: "vivo X200 Pro", brand: "vivo", width: 1260, height: 2800 },
-  { id: "vivo-x200", name: "vivo X200", brand: "vivo", width: 1260, height: 2800 },
-  { id: "vivo-v30-pro", name: "vivo V30 Pro", brand: "vivo", width: 1080, height: 2376 },
-  // Realme
-  { id: "realme-gt-7-pro", name: "Realme GT 7 Pro", brand: "Realme", width: 1264, height: 2780 },
-  { id: "realme-13-pro-plus", name: "Realme 13 Pro+", brand: "Realme", width: 1080, height: 2412 },
-  { id: "realme-12-pro-plus", name: "Realme 12 Pro+", brand: "Realme", width: 1080, height: 2412 },
-  // Honor
-  { id: "honor-magic-7-pro", name: "Honor Magic 7 Pro", brand: "Honor", width: 1280, height: 2800 },
-  { id: "honor-200-pro", name: "Honor 200 Pro", brand: "Honor", width: 1200, height: 2664 },
-  { id: "honor-200", name: "Honor 200", brand: "Honor", width: 1080, height: 2376 },
-];
+function StepCard({
+  num,
+  title,
+  children,
+}: {
+  num: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="border border-white/[0.07] rounded-xl p-5 bg-white/[0.02]">
+      <div className="flex items-center gap-3 mb-3.5">
+        <span className="flex items-center justify-center shrink-0 w-7 h-7 rounded-lg bg-white/[0.08] text-white text-[13px] font-bold">
+          {num}
+        </span>
+        <h4 className="text-[15px] font-semibold text-white tracking-tight">{title}</h4>
+      </div>
+      <div className="text-[13px] text-white/45 leading-relaxed pl-10 space-y-2.5">
+        {children}
+      </div>
+    </div>
+  );
+}
 
-const iosSteps = [
-  { title: "Generate", desc: "Pick theme & device, then generate." },
-  { title: "Create Automation", desc: 'Shortcuts → Automation → Time of Day → Daily → "Create New Shortcut".' },
-  { title: "Add Actions", desc: '"Get Contents of URL" with your URL, then "Set Wallpaper Photo".' },
-  { title: "Automate", desc: "Runs daily at 6 AM — your wallpaper updates automatically." },
-];
+function SubStep({ num, children }: { num: string; children: ReactNode }) {
+  return (
+    <div className="flex gap-2.5">
+      <span className="text-white/30 font-mono text-[12px] pt-px shrink-0">{num}</span>
+      <div className="flex-1 space-y-1.5">{children}</div>
+    </div>
+  );
+}
 
-const androidSteps = [
-  { title: "Generate", desc: "Pick your Android model, theme, then generate." },
-  { title: "Install MacroDroid", desc: "Get MacroDroid free from Google Play Store." },
-  { title: "Add Macro", desc: "Trigger: Date/Time → Daily 00:01. Action: HTTP Request → save to /Download/gitwall.png, then Set Wallpaper." },
-  { title: "Create & Test", desc: 'Name the macro → "Create Macro". Test it via More options → Test macro.' },
-];
+function ImportantNote({ children }: { children: ReactNode }) {
+  return (
+    <div className="mt-1 p-3.5 bg-amber-500/[0.06] border border-amber-500/20 rounded-lg">
+      <p className="text-[12px] text-amber-200/70 leading-relaxed">{children}</p>
+    </div>
+  );
+}
+
+function UrlBox({
+  url,
+  copied,
+  onCopy,
+}: {
+  url: string | null;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="flex gap-2 mt-1.5">
+      <input
+        readOnly
+        value={url || ""}
+        placeholder="Complete step 1 first…"
+        onClick={(e) => (e.target as HTMLInputElement).select()}
+        className="flex-1 min-w-0 bg-black/30 border border-white/[0.08] rounded-md px-3 py-2 text-[12px] text-emerald-400/80 placeholder:text-white/20 focus:outline-none font-mono"
+      />
+      <button
+        onClick={onCopy}
+        disabled={!url}
+        aria-label="Copy wallpaper URL"
+        className="shrink-0 border border-white/[0.12] rounded-md px-3 text-white/50 hover:text-white hover:border-white/30 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+      >
+        {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+      </button>
+    </div>
+  );
+}
 
 export default function Home() {
   const [platform, setPlatform] = useState<"iphone" | "android">("iphone");
@@ -159,24 +124,29 @@ export default function Home() {
   const [shape, setShape] = useState("box");
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [showGuide, setShowGuide] = useState(false);
   const [autoDetected, setAutoDetected] = useState(false);
   const [themes, setThemes] = useState<Theme[]>(FALLBACK_THEMES);
   const [devices, setDevices] = useState<Device[]>(FALLBACK_DEVICES);
+  const [androidDevices, setAndroidDevices] = useState<AndroidDevice[]>(ANDROID_DEVICES);
+  // Monotonic id so an out-of-order preview fetch can't overwrite a newer one.
+  const reqIdRef = useRef(0);
 
   useEffect(() => {
     let active = true;
     Promise.all([
       fetch("/api/themes").then((r) => r.json()),
       fetch("/api/devices").then((r) => r.json()),
+      fetch("/api/android-devices").then((r) => r.json()),
     ])
-      .then(([t, d]: [Theme[], Device[]]) => {
+      .then(([t, d, a]: [Theme[], Device[], AndroidDevice[]]) => {
         if (!active) return;
         if (Array.isArray(t) && t.length) setThemes(t);
         if (Array.isArray(d) && d.length) setDevices(d);
+        if (Array.isArray(a) && a.length) setAndroidDevices(a);
       })
       .catch(() => {
         /* keep fallbacks if the API is unreachable */
@@ -193,7 +163,7 @@ export default function Home() {
       setPlatform("android");
       const w = Math.min(screen.width, screen.height) * window.devicePixelRatio;
       const h = Math.max(screen.width, screen.height) * window.devicePixelRatio;
-      const match = androidDevices.find(
+      const match = ANDROID_DEVICES.find(
         (d) => Math.abs(d.width - w) < 40 && Math.abs(d.height - h) < 80
       );
       if (match) {
@@ -235,6 +205,19 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Restore the last username on load and persist it across refreshes.
+  useEffect(() => {
+    const saved = localStorage.getItem("gitwall:username");
+    if (saved) setUsername(saved);
+  }, []);
+  useEffect(() => {
+    if (username.trim()) {
+      localStorage.setItem("gitwall:username", username.trim());
+    } else {
+      localStorage.removeItem("gitwall:username");
+    }
+  }, [username]);
+
   const filteredAndroid = androidSearch
     ? androidDevices.filter((d) =>
         d.name.toLowerCase().includes(androidSearch.toLowerCase()) ||
@@ -254,9 +237,15 @@ export default function Home() {
     }
     setError(null);
     setLoading(true);
-    setPreviewSrc((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
+    const reqId = ++reqIdRef.current;
+
+    const key = settingsKey({
+      user,
+      theme: selectedTheme,
+      stats: showStats,
+      shape,
+      platform,
+      device: platform === "android" ? androidDevice?.id : iphoneDevice,
     });
 
     const previewParams = new URLSearchParams({ user, theme: selectedTheme, stats: showStats, shape });
@@ -278,48 +267,41 @@ export default function Home() {
       fullUrl = `${window.location.origin}/api/wallpaper?${params}`;
     }
 
-
     try {
       const res = await fetch(previewUrl);
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to generate wallpaper");
+        // The route returns JSON errors, but a proxy 5xx can be HTML — guard
+        // the parse so the real failure isn't masked by a JSON syntax error.
+        let message = "Failed to generate wallpaper";
+        try {
+          const err = await res.json();
+          if (err?.error) message = err.error;
+        } catch {
+          /* non-JSON body (e.g. a gateway error page) — keep the generic message */
+        }
+        throw new Error(message);
       }
       const blob = await res.blob();
-      setPreviewSrc(URL.createObjectURL(blob));
+      const objectUrl = URL.createObjectURL(blob);
+      // A newer request superseded this one while it was in flight — drop it.
+      if (reqIdRef.current !== reqId) {
+        URL.revokeObjectURL(objectUrl);
+        return;
+      }
+      setPreviewSrc((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return objectUrl;
+      });
       setWallpaperUrl(fullUrl);
+      setGeneratedKey(key);
     } catch (err: unknown) {
+      if (reqIdRef.current !== reqId) return;
       const message = err instanceof Error ? err.message : "Something went wrong";
       setError(message);
     } finally {
-      setLoading(false);
+      if (reqIdRef.current === reqId) setLoading(false);
     }
   }, [username, selectedTheme, iphoneDevice, androidDevice, platform, showStats, shape]);
-
-  const generateRef = useRef(generate);
-  const usernameRef = useRef(username);
-  useEffect(() => {
-    generateRef.current = generate;
-    usernameRef.current = username;
-  }, [generate, username]);
-
-  useEffect(() => {
-    if (!usernameRef.current.trim()) return;
-    const id = setTimeout(() => generateRef.current(), 200);
-    return () => clearTimeout(id);
-  }, [selectedTheme, iphoneDevice, androidDevice, platform, showStats, shape]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("gitwall:username");
-    if (saved) setUsername(saved);
-  }, []);
-  useEffect(() => {
-    if (username.trim()) {
-      localStorage.setItem("gitwall:username", username.trim());
-    } else {
-      localStorage.removeItem("gitwall:username");
-    }
-  }, [username]);
 
   const handleCopy = useCallback(() => {
     if (wallpaperUrl) {
@@ -338,7 +320,94 @@ export default function Home() {
     }
   }, [wallpaperUrl, username]);
 
-  const steps = platform === "android" ? androidSteps : iosSteps;
+  const currentKey = settingsKey({
+    user: username.trim(),
+    theme: selectedTheme,
+    stats: showStats,
+    shape,
+    platform,
+    device: platform === "android" ? androidDevice?.id : iphoneDevice,
+  });
+  const hasGenerated = generatedKey !== null;
+  const isDirty = hasGenerated && currentKey !== generatedKey;
+
+  const iphoneGuide = (
+    <div className="space-y-3">
+      <StepCard num="1" title="Generate">
+        <p>Enter your GitHub username, choose a theme and your device above, then tap <b className="font-semibold text-white/75">Generate</b>.</p>
+      </StepCard>
+      <StepCard num="2" title="Create Automation">
+        <p>
+          Open the <b className="font-semibold text-white/75">Shortcuts</b> app → <b className="font-semibold text-white/75">Automation</b> tab → <b className="font-semibold text-white/75">New Automation</b> → <b className="font-semibold text-white/75">Time of Day</b> → set <b className="font-semibold text-white/75">6:00 AM</b> → Repeat <b className="font-semibold text-white/75">Daily</b> → <b className="font-semibold text-white/75">Run Immediately</b> → <b className="font-semibold text-white/75">Create New Shortcut</b>.
+        </p>
+      </StepCard>
+      <StepCard num="3" title="Create Shortcut">
+        <p className="text-[11px] font-semibold text-white/30 tracking-wide uppercase">Add these actions</p>
+        <SubStep num="3.1">
+          <p><b className="font-semibold text-white/75">“Get Contents of URL”</b> → paste your wallpaper URL:</p>
+          <UrlBox url={wallpaperUrl} copied={copied} onCopy={handleCopy} />
+        </SubStep>
+        <SubStep num="3.2">
+          <p><b className="font-semibold text-white/75">“Set Wallpaper Photo”</b> → choose <b className="font-semibold text-white/75">Lock Screen</b>.</p>
+        </SubStep>
+        <ImportantNote>
+          <b className="font-semibold text-amber-300/90">Important:</b> In “Set Wallpaper Photo”, tap the arrow (→) to show options → disable both <b className="font-semibold text-amber-200/90">“Crop to Subject”</b> and <b className="font-semibold text-amber-200/90">“Show Preview”</b>. This stops iOS from cropping the image and asking for confirmation every day.
+        </ImportantNote>
+      </StepCard>
+    </div>
+  );
+
+  const androidGuide = (
+    <div className="space-y-3">
+      <StepCard num="1" title="Generate">
+        <p>Search your phone model, choose a theme above, then tap <b className="font-semibold text-white/75">Generate</b>.</p>
+      </StepCard>
+      <StepCard num="2" title="Prerequisites">
+        <p>Install <b className="font-semibold text-white/75">MacroDroid</b> from the Google Play Store.</p>
+      </StepCard>
+      <StepCard num="3" title="Setup Macro">
+        <p>Open <b className="font-semibold text-white/75">MacroDroid</b> → <b className="font-semibold text-white/75">Add Macro</b>.</p>
+        <p><b className="font-semibold text-white/75">Trigger:</b> Date/Time → Day/Time → set time to <b className="font-semibold text-white/75">00:01</b> → activate <b className="font-semibold text-white/75">all weekdays</b>.</p>
+      </StepCard>
+      <StepCard num="4" title="Configure Actions">
+        <SubStep num="4.1">
+          <p className="text-white/70 font-medium">Download Image</p>
+          <ul className="list-disc pl-4 space-y-1 marker:text-white/20">
+            <li>Go to <b className="font-semibold text-white/75">Web Interactions</b> → <b className="font-semibold text-white/75">HTTP Request</b></li>
+            <li>Request method: <b className="font-semibold text-white/75">GET</b></li>
+            <li>Paste your wallpaper URL:</li>
+          </ul>
+          <UrlBox url={wallpaperUrl} copied={copied} onCopy={handleCopy} />
+          <ul className="list-disc pl-4 space-y-1 marker:text-white/20">
+            <li>Enable <b className="font-semibold text-white/75">Block next actions until complete</b></li>
+            <li>Tick <b className="font-semibold text-white/75">Save HTTP response to file</b></li>
+            <li>Folder &amp; filename: <span className="font-mono text-white/60">/Download/gitwall.png</span></li>
+          </ul>
+        </SubStep>
+        <SubStep num="4.2">
+          <p className="text-white/70 font-medium">Set Wallpaper</p>
+          <ul className="list-disc pl-4 space-y-1 marker:text-white/20">
+            <li>Go to <b className="font-semibold text-white/75">Device Settings</b> → <b className="font-semibold text-white/75">Set Wallpaper</b></li>
+            <li>Choose <b className="font-semibold text-white/75">Image and Screen</b></li>
+            <li>Folder &amp; filename: <span className="font-mono text-white/60">/Download/gitwall.png</span></li>
+          </ul>
+        </SubStep>
+        <ImportantNote>
+          <b className="font-semibold text-amber-300/90">Important:</b> Use the <b className="font-semibold text-amber-200/90">exact same folder and filename</b> in both actions.
+        </ImportantNote>
+      </StepCard>
+      <StepCard num="5" title="Finalize">
+        <p>Give the macro a name → tap <b className="font-semibold text-white/75">Create Macro</b>.</p>
+      </StepCard>
+      <StepCard num="?" title="Testing & Managing">
+        <ul className="list-disc pl-4 space-y-1 marker:text-white/20">
+          <li><b className="font-semibold text-white/75">Test:</b> MacroDroid → Macros → select your macro → More options → <b className="font-semibold text-white/75">Test macro</b></li>
+          <li><b className="font-semibold text-white/75">Stop:</b> toggle off or delete the macro</li>
+          <li><b className="font-semibold text-white/75">Edit URL:</b> tap the HTTP Request action → update the URL → Save</li>
+        </ul>
+      </StepCard>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
@@ -366,28 +435,16 @@ export default function Home() {
               <label htmlFor="gh-username" className="block text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">
                 GitHub Username
               </label>
-              <div className="flex gap-2.5">
-                <input
-                  id="gh-username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && generate()}
-                  placeholder="e.g. torvalds"
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-3 text-[15px] text-white placeholder:text-white/20 focus:outline-none focus:border-white/25 transition-colors"
-                />
-                <button
-                  onClick={generate}
-                  disabled={loading}
-                  className="px-6 py-3 bg-white text-black text-[13px] font-bold rounded-lg hover:bg-white/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
-                >
-                  {loading ? <Loader2 className="size-4 animate-spin" /> : "Generate →"}
-                </button>
-              </div>
-              {error && (
-                <p className="text-red-400/80 text-[13px] mt-2.5 font-medium">{error}</p>
-              )}
+              <input
+                id="gh-username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && generate()}
+                placeholder="e.g. torvalds"
+                autoComplete="off"
+                spellCheck={false}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-3 text-[15px] text-white placeholder:text-white/20 focus:outline-none focus:border-white/25 transition-colors"
+              />
             </div>
 
             {/* Appearance */}
@@ -404,7 +461,7 @@ export default function Home() {
                 <div className="flex gap-2">
                   <button
                     id="platform-iphone"
-                    onClick={() => { setPlatform("iphone"); setShowGuide(false); }}
+                    onClick={() => setPlatform("iphone")}
                     className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-[13px] font-semibold transition-all ${
                       platform === "iphone"
                         ? "border-white/40 bg-white/[0.08] text-white"
@@ -419,7 +476,7 @@ export default function Home() {
                   </button>
                   <button
                     id="platform-android"
-                    onClick={() => { setPlatform("android"); setShowGuide(false); }}
+                    onClick={() => setPlatform("android")}
                     className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-[13px] font-semibold transition-all ${
                       platform === "android"
                         ? "border-[#3ddc84]/50 bg-[#3ddc84]/[0.06] text-[#3ddc84]"
@@ -447,7 +504,7 @@ export default function Home() {
                       <select
                         id="device-select"
                         value={iphoneDevice}
-                        onChange={(e) => setIphoneDevice(e.target.value)}
+                        onChange={(e) => { setIphoneDevice(e.target.value); setAutoDetected(false); }}
                         className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-[13px] text-white focus:outline-none focus:border-white/25 transition-colors cursor-pointer appearance-none font-medium"
                       >
                         {devices.map((d) => (
@@ -496,6 +553,7 @@ export default function Home() {
                                   setAndroidDevice(d);
                                   setAndroidSearch(d.name);
                                   setShowAndroidDropdown(false);
+                                  setAutoDetected(false);
                                 }}
                                 className="w-full text-left px-3.5 py-2.5 hover:bg-white/[0.06] transition-colors group"
                               >
@@ -590,9 +648,33 @@ export default function Home() {
                   ))}
                 </div>
               </div>
+
+              {/* Generate / Regenerate — below the theme picker */}
+              <div className="mt-8">
+                <button
+                  id="generate-btn"
+                  onClick={generate}
+                  disabled={loading}
+                  className="w-full py-3.5 bg-white text-black text-[14px] font-bold rounded-lg hover:bg-white/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    `${hasGenerated ? "Regenerate" : "Generate"} →`
+                  )}
+                </button>
+                {isDirty && !loading && (
+                  <p className="text-amber-300/70 text-[12px] mt-2.5 text-center font-medium">
+                    Settings changed — regenerate to update your wallpaper.
+                  </p>
+                )}
+                {error && (
+                  <p className="text-red-400/80 text-[13px] mt-2.5 font-medium text-center">{error}</p>
+                )}
+              </div>
             </div>
 
-            {/* Export */}
+            {/* Export & Automate */}
             <div className="pt-8 border-t border-white/[0.06]">
               <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-5">
                 Export & Automate
@@ -601,67 +683,20 @@ export default function Home() {
               <button
                 onClick={handleDownload}
                 disabled={!wallpaperUrl}
-                className="w-full py-3.5 bg-white text-black text-[13px] font-bold rounded-lg hover:bg-white/90 transition-colors disabled:opacity-20 disabled:cursor-not-allowed mb-5 flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-white/[0.06] border border-white/[0.08] text-white text-[13px] font-semibold rounded-lg hover:bg-white/[0.1] transition-colors disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Download className="size-3.5" />
                 Download PNG
               </button>
 
-              <div className="mb-6">
-                <label className="block text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-2.5">
-                  {platform === "android" ? "MacroDroid URL" : "iOS Shortcut URL"}
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    readOnly
-                    value={wallpaperUrl || ""}
-                    placeholder="Generate a wallpaper first..."
-                    onClick={(e) => (e.target as HTMLInputElement).select()}
-                    className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-[12px] text-emerald-400/80 placeholder:text-white/15 focus:outline-none font-mono"
-                  />
-                  <button
-                    onClick={handleCopy}
-                    disabled={!wallpaperUrl}
-                    aria-label="Copy shortcut URL"
-                    className="border border-white/[0.12] rounded-lg px-5 text-[13px] font-semibold text-white/50 hover:text-white hover:border-white/30 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
-                  >
-                    {copied ? "✓" : "Copy"}
-                  </button>
-                </div>
+              <div className="mt-7">
+                <p className="text-[13px] font-semibold text-white/70 mb-4">
+                  {platform === "android"
+                    ? "Auto-update daily with MacroDroid"
+                    : "Auto-update daily with iOS Shortcuts"}
+                </p>
+                {platform === "iphone" ? iphoneGuide : androidGuide}
               </div>
-
-              <button
-                onClick={() => setShowGuide(!showGuide)}
-                className="flex items-center gap-1.5 text-[12px] font-medium text-white/25 hover:text-white/50 transition-colors"
-              >
-                <ChevronRight className={`size-3 transition-transform ${showGuide ? "rotate-90" : ""}`} />
-                {platform === "android" ? "How to set up MacroDroid?" : "How do I automate this?"}
-              </button>
-
-              {showGuide && (
-                <>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 mt-4 border border-white/[0.07] rounded-lg overflow-hidden">
-                    {steps.map((step, i) => (
-                      <div
-                        key={i}
-                        className={`p-4 bg-white/[0.02] ${i < steps.length - 1 ? "border-r border-white/[0.06]" : ""}`}
-                      >
-                        <div className="text-[10px] font-semibold text-white/20 mb-2">{String(i + 1).padStart(2, "0")}</div>
-                        <div className="text-[13px] font-semibold text-white mb-1">{step.title}</div>
-                        <div className="text-[11px] text-white/35 leading-relaxed font-normal">{step.desc}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {platform === "android" && (
-                    <div className="mt-3 p-3.5 bg-amber-500/[0.06] border border-amber-500/20 rounded-lg">
-                      <p className="text-[11px] text-amber-400/70 leading-relaxed">
-                        <span className="font-semibold text-amber-400/90">Important:</span> In MacroDroid, use the <span className="font-mono text-amber-300/70">/Download/gitwall.png</span> path in <em>both</em> the HTTP Request and Set Wallpaper actions — the filename must match exactly.
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
             </div>
           </div>
 
@@ -687,7 +722,12 @@ export default function Home() {
                 )}
                 {previewSrc && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={previewSrc} alt="Wallpaper preview" className="w-full h-full object-cover" />
+                  <img src={previewSrc} alt="Wallpaper preview" className={`w-full h-full object-cover transition-opacity ${isDirty ? "opacity-40" : ""}`} />
+                )}
+                {previewSrc && isDirty && !loading && (
+                  <div className="absolute inset-x-0 bottom-0 bg-black/70 py-2 text-center text-[10px] font-medium text-white/70">
+                    Preview out of date
+                  </div>
                 )}
               </div>
             ) : (
@@ -716,7 +756,12 @@ export default function Home() {
                 )}
                 {previewSrc && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={previewSrc} alt="Wallpaper preview" className="w-full h-full object-cover" />
+                  <img src={previewSrc} alt="Wallpaper preview" className={`w-full h-full object-cover transition-opacity ${isDirty ? "opacity-40" : ""}`} />
+                )}
+                {previewSrc && isDirty && !loading && (
+                  <div className="absolute inset-x-0 bottom-0 bg-black/70 py-2 text-center text-[10px] font-medium text-white/70">
+                    Preview out of date
+                  </div>
                 )}
               </div>
             )}
