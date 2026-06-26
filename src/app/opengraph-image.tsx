@@ -68,7 +68,7 @@ export default async function Image() {
               margin: 0,
             }}
           >
-            Generate iPhone wallpapers from your GitHub contribution graph
+            Generate wallpapers from your GitHub contribution graph
           </p>
         </div>
 
