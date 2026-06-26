@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const title = "GitWall — GitHub Contribution Wallpapers for iPhone";
+const title = "GitWall — GitHub Contribution Wallpapers";
 const description =
-  "Generate iPhone wallpapers from your GitHub contribution graph, with auto-updating lock screen support via iOS Shortcuts.";
+  "Generate wallpapers from your GitHub contribution graph, with auto-updating lock screen support via shortcuts.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://gitwall.space"),
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   keywords: [
     "github",
     "contribution graph",
-    "iphone wallpaper",
+    "wallpaper",
     "ios shortcuts",
     "lock screen",
   ],
