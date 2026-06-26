@@ -133,10 +133,10 @@ const iosSteps = [
 ];
 
 const androidSteps = [
-  { title: "Generate", desc: "Pick your Android model, theme, then generate and copy the URL." },
   { title: "Install MacroDroid", desc: "Get MacroDroid free from Google Play Store." },
-  { title: "HTTP Request Action", desc: 'Web Interactions → HTTP Request → GET → paste URL. ✓ Check \"Block next actions until complete\". Response: Save to file → Storage Access Framework → pick any folder → filename: gitwall.png.' },
-  { title: "Set Wallpaper Action", desc: 'Device Settings → Set Wallpaper → browse to the same folder and file (gitwall.png). Name the macro → Create Macro.' },
+  { title: "Add Macro & Trigger", desc: "Open MacroDroid → Add Macro. Trigger: Date/Time → Day/Time → Set time to 00:01:00 → activate all weekdays." },
+  { title: "HTTP Request Action", desc: "Web Interactions → HTTP Request → GET → paste your URL → ✓ Block next actions until complete → Response: Save HTTP response to file → Folder & filename: /Download/gitwall.png" },
+  { title: "Set Wallpaper & Done", desc: "Device Settings → Set Wallpaper → Image and Screen → Folder & filename: /Download/gitwall.png → name the macro → tap Create Macro." },
 ];
 
 export default function Home() {
@@ -565,9 +565,15 @@ export default function Home() {
                   </div>
 
                   {platform === "android" && (
-                    <div className="mt-3 p-3.5 bg-amber-500/[0.06] border border-amber-500/20 rounded-lg">
+                    <div className="mt-3 p-3.5 bg-amber-500/[0.06] border border-amber-500/20 rounded-lg space-y-2">
                       <p className="text-[11px] text-amber-400/70 leading-relaxed">
-                        <span className="font-semibold text-amber-400/90">Important:</span> Use <span className="font-semibold text-amber-300/80">Storage Access Framework</span> (not All File Access) — modern Android blocks direct path access. Pick any folder you own (e.g. Pictures), set filename <span className="font-mono text-amber-300/70">gitwall.png</span>, and browse to that <em>same</em> file in the Set Wallpaper action. Also make sure <span className="font-semibold text-amber-300/80">"Block next actions until complete"</span> is checked in the HTTP Request settings.
+                        <span className="font-semibold text-amber-400/90">Important:</span> Use the <span className="font-mono text-amber-300/70">/Download/gitwall.png</span> path in <em>both</em> the HTTP Request and Set Wallpaper actions — the filename must match exactly.
+                      </p>
+                      <p className="text-[11px] text-amber-400/50 leading-relaxed">
+                        <span className="font-semibold text-amber-400/70">Phone blocks /Download/?</span> In the HTTP Request response section, choose <span className="font-semibold">Storage Access Framework</span> instead of All File Access, tap [Select folder], pick any folder you own (e.g. Pictures), and set filename <span className="font-mono">gitwall.png</span>. Use that same SAF location in Set Wallpaper.
+                      </p>
+                      <p className="text-[11px] text-amber-400/50 leading-relaxed">
+                        <span className="font-semibold text-amber-400/70">To test:</span> MacroDroid → Macros → select your macro → More options → Test macro.
                       </p>
                     </div>
                   )}
