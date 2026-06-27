@@ -10,7 +10,6 @@ import type { SpidermanVariant } from "./spiderman";
 // lenses with white fangs, Spider-Verse = halftone + chromatic print.
 
 const TAU = Math.PI * 2;
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 export interface SpidermanSceneArgs {
   width: number;
@@ -32,49 +31,51 @@ interface Grade {
   bgTop: string;
   bgBot: string;
   empty: string;
+  emptyEdge: string; // faint border on empty cells so the grid reads
   ramp: [string, string, string, string];
   rampRGB: [number, number, number][];
   accent: string;
   accentRGB: string; // "r,g,b" for halos/dew
-  web: string; // faint corner webbing + seam
+  cityRGB: string; // faded skyline silhouette "r,g,b"
+  windowRGB: string; // lit windows "r,g,b"
   treatment: Treatment;
 }
 
 const GRADES: Record<SpidermanVariant, Grade> = {
   classic: {
     bgTop: "#0e1426", bgBot: "#070a14",
-    empty: "rgba(34,46,82,0.55)",
+    empty: "rgba(38,50,90,0.6)", emptyEdge: "rgba(120,140,200,0.14)",
     ramp: ["#9c1a2e", "#cf1f3c", "#f23048", "#ff5e74"],
     rampRGB: [[156, 26, 46], [207, 31, 60], [242, 48, 72], [255, 94, 116]],
     accent: "#5d7bd6", accentRGB: "93,123,214",
-    web: "#5d7bd6",
+    cityRGB: "24,34,66", windowRGB: "255,196,120",
     treatment: "classic",
   },
   miles: {
     bgTop: "#0e0c1e", bgBot: "#080611",
-    empty: "rgba(44,36,78,0.6)",
+    empty: "rgba(52,44,92,0.62)", emptyEdge: "rgba(130,120,210,0.14)",
     ramp: ["#27349e", "#3a7bf0", "#33beff", "#9ee6ff"],
     rampRGB: [[39, 52, 158], [58, 123, 240], [51, 190, 255], [158, 230, 255]],
     accent: "#36c8ff", accentRGB: "54,200,255",
-    web: "#4a4488",
+    cityRGB: "30,26,62", windowRGB: "90,200,255",
     treatment: "miles",
   },
   symbiote: {
     bgTop: "#0a090d", bgBot: "#040305",
-    empty: "rgba(28,29,36,0.65)",
-    ramp: ["#6e6f7c", "#9b9ca8", "#cccdd8", "#ffffff"],
-    rampRGB: [[110, 111, 124], [155, 156, 168], [204, 205, 216], [255, 255, 255]],
+    empty: "rgba(46,48,60,0.92)", emptyEdge: "rgba(150,154,176,0.18)",
+    ramp: ["#6e7488", "#959bb6", "#c8cfe6", "#ffffff"],
+    rampRGB: [[110, 116, 136], [149, 155, 182], [200, 207, 230], [255, 255, 255]],
     accent: "#d8d9e2", accentRGB: "216,217,226",
-    web: "#cfd0da",
+    cityRGB: "26,27,33", windowRGB: "210,212,222",
     treatment: "noir",
   },
   verse: {
     bgTop: "#160a28", bgBot: "#0a0512",
-    empty: "rgba(54,28,72,0.55)",
-    ramp: ["#3a1470", "#6a1fb0", "#a020c0", "#ffe23d"],
-    rampRGB: [[58, 20, 112], [106, 31, 176], [160, 32, 192], [255, 226, 61]],
+    empty: "rgba(64,38,92,0.6)", emptyEdge: "rgba(180,120,220,0.16)",
+    ramp: ["#5a24a0", "#8a2bd0", "#bb33e2", "#ecd23a"],
+    rampRGB: [[90, 36, 160], [138, 43, 208], [187, 51, 226], [236, 210, 58]],
     accent: "#1fd6ff", accentRGB: "31,214,255",
-    web: "#1fd6ff",
+    cityRGB: "42,22,60", windowRGB: "255,226,90",
     treatment: "verse",
   },
 };
@@ -96,40 +97,40 @@ function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
   ctx.roundRect(x, y, w, h, r);
 }
 
-// Faint corner web (hairline, low alpha) — frames the lenses, never the grid.
-function drawCornerWeb(ctx: CanvasRenderingContext2D, ax: number, ay: number, a0: number, a1: number, radius: number, stroke: string, scale: number) {
-  const spokes = 8, rings = 6, sag = 0.16;
+// Faded night-city skyline — the familiar Spider-Man backdrop. Buildings rise
+// from `baseY` up toward `topY`, emerging from the dark with sparse lit windows.
+// Deterministic (sin-hashed) so it's stable per render.
+function drawSkyline(ctx: CanvasRenderingContext2D, width: number, baseY: number, topY: number, g: Grade, scale: number, intensity: number) {
   ctx.save();
-  ctx.strokeStyle = stroke;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.lineWidth = 1 * scale;
-  const angs: number[] = [];
-  for (let s = 0; s < spokes; s++) angs.push(lerp(a0, a1, s / (spokes - 1)));
-  for (const a of angs) {
-    const grad = ctx.createLinearGradient(ax, ay, ax + Math.cos(a) * radius, ay + Math.sin(a) * radius);
-    grad.addColorStop(0, stroke);
-    grad.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.globalAlpha = 0.16;
-    ctx.strokeStyle = grad;
-    ctx.beginPath();
-    ctx.moveTo(ax, ay);
-    ctx.lineTo(ax + Math.cos(a) * radius, ay + Math.sin(a) * radius);
-    ctx.stroke();
-  }
-  ctx.strokeStyle = stroke;
-  for (let ri = 1; ri <= rings; ri++) {
-    const r = radius * lerp(0.14, 1, ri / rings);
-    ctx.globalAlpha = 0.14 * (1 - ri / (rings + 2));
-    ctx.beginPath();
-    for (let s = 0; s < angs.length - 1; s++) {
-      const x0 = ax + Math.cos(angs[s]) * r, y0 = ay + Math.sin(angs[s]) * r;
-      const x1 = ax + Math.cos(angs[s + 1]) * r, y1 = ay + Math.sin(angs[s + 1]) * r;
-      const am = (angs[s] + angs[s + 1]) / 2, rc = r * (1 - sag);
-      if (s === 0) ctx.moveTo(x0, y0);
-      ctx.quadraticCurveTo(ax + Math.cos(am) * rc, ay + Math.sin(am) * rc, x1, y1);
+  let x = -30 * scale;
+  let i = 0;
+  while (x < width + 30) {
+    const w = (44 + (Math.sin(i * 12.9) * 0.5 + 0.5) * 62) * scale;
+    const hFrac = 0.3 + (Math.sin(i * 7.3 + 1.1) * 0.5 + 0.5) * 0.68;
+    const by = baseY - (baseY - topY) * hFrac;
+    const grad = ctx.createLinearGradient(0, by, 0, baseY);
+    grad.addColorStop(0, `rgba(${g.cityRGB},${0.15 * intensity})`);
+    grad.addColorStop(1, `rgba(${g.cityRGB},${0.85 * intensity})`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, by, w, baseY - by);
+    // Lit windows — sparse, in tidy stacks (reads as a building, not noise),
+    // brighter toward the base, kept clear of the very bottom near the grid.
+    const cols = Math.max(2, Math.floor(w / (16 * scale)));
+    const rows = Math.floor((baseY - by - 22 * scale) / (20 * scale));
+    for (let cxi = 0; cxi < cols; cxi++) {
+      for (let ry = 0; ry < rows; ry++) {
+        if (((cxi * 31 + ry * 17 + i * 13) % 5) > 1) continue; // sparse but stacked
+        const wx = x + 8 * scale + cxi * (16 * scale);
+        const wy = by + 13 * scale + ry * (20 * scale);
+        const f = (wy - by) / Math.max(1, baseY - by);
+        ctx.globalAlpha = (0.22 + f * 0.45) * intensity;
+        ctx.fillStyle = `rgb(${g.windowRGB})`;
+        ctx.fillRect(wx, wy, 3 * scale, 4 * scale);
+      }
     }
-    ctx.stroke();
+    ctx.globalAlpha = 1;
+    x += w + 5 * scale;
+    i++;
   }
   ctx.restore();
 }
@@ -142,25 +143,34 @@ function lensPath(ctx: CanvasRenderingContext2D, W: number, H: number, mirror: n
     const x = mirror * fx * W, y = fy * H;
     return [cxl + (x - cxl) * s, y * s];
   };
-  const pin = P(0, 0.18), ptop = P(0.42, -0.5), pout = P(1.0, -0.16), pbot = P(0.46, 0.5);
-  ctx.beginPath();
-  ctx.moveTo(pin[0], pin[1]);
+  // Classic comic mask lens (matched to the user's reference): a bold almond with
+  // the inner-top corner rising high toward the centre, an arched brow, and a
+  // sharp tip swept down-and-OUTWARD at the outer-lower corner. The two lenses
+  // nearly meet at the top centre and splay apart toward their outer tips.
+  // Traced from the user's reference: a bold eye that is tall and full on the
+  // INNER side near the centre and tapers to a sharp point at the OUTER end (the
+  // temple), sweeping out and slightly down. High arched brow on top, rounded
+  // inner edge facing the nose. The two eyes' inner ends sit close to the centre.
   const c = (fx: number, fy: number) => P(fx, fy);
-  let a = c(0.1, -0.3), b = c(0.26, -0.5);
-  ctx.bezierCurveTo(a[0], a[1], b[0], b[1], ptop[0], ptop[1]);
-  a = c(0.66, -0.5); b = c(0.92, -0.38);
-  ctx.bezierCurveTo(a[0], a[1], b[0], b[1], pout[0], pout[1]);
-  a = c(0.92, 0.34); b = c(0.66, 0.5);
-  ctx.bezierCurveTo(a[0], a[1], b[0], b[1], pbot[0], pbot[1]);
-  a = c(0.3, 0.5); b = c(0.1, 0.4);
-  ctx.bezierCurveTo(a[0], a[1], b[0], b[1], pin[0], pin[1]);
+  const outerTip = P(0.72, -0.47); // sharp point at the temple, swept up and out
+  const innerTop = P(0.09, 0.01);  // inner-top corner, near the centre
+  const innerBot = P(0.22, 0.42);  // inner-bottom
+  ctx.beginPath();
+  ctx.moveTo(innerTop[0], innerTop[1]);
+  let a = c(0.53, -0.27), b = c(0.47, -0.19);
+  ctx.bezierCurveTo(a[0], a[1], b[0], b[1], outerTip[0], outerTip[1]);  // brow → sharp outer tip
+  a = c(0.74, 0.34); b = c(0.39, 0.55);
+  ctx.bezierCurveTo(a[0], a[1], b[0], b[1], innerBot[0], innerBot[1]);  // lower lid → inner-bottom
+  a = c(-0.02, 0.22); b = c(-0.04, 0.09);
+  ctx.bezierCurveTo(a[0], a[1], b[0], b[1], innerTop[0], innerTop[1]);  // inner edge → back to top
   ctx.closePath();
 }
 
 function drawLens(ctx: CanvasRenderingContext2D, originX: number, cy: number, W: number, H: number, mirror: number, g: Grade, scale: number) {
   ctx.save();
   ctx.translate(originX, cy);
-  ctx.rotate(mirror * (-9 * Math.PI) / 180); // brow raised at the temple
+  // No rotation — the lens shape carries its own tilt, and zero rotation keeps the
+  // two lenses a perfect mirror pair.
 
   // verse: chromatic ghosts under the white face.
   if (g.treatment === "verse") {
@@ -202,32 +212,24 @@ function drawLens(ctx: CanvasRenderingContext2D, originX: number, cy: number, W:
     }
   }
 
-  // Gloss + webbed-lens detail, clipped inside the lens.
+  // Gloss, clipped inside the lens. Two faint concentric ribs only — no scratchy
+  // radial spokes (they read as dust). The lens is mostly a clean reflective face.
   ctx.save();
   lensPath(ctx, W, H, mirror, 1);
   ctx.clip();
-  // faint web mesh (concentric ribs + radial spokes)
-  ctx.strokeStyle = "rgba(70,80,100,0.16)";
-  ctx.lineWidth = 1.4 * scale;
+  ctx.strokeStyle = "rgba(70,80,100,0.1)";
+  ctx.lineWidth = 1.3 * scale;
   ctx.lineJoin = "round";
-  for (const s of [0.74, 0.5, 0.26]) {
+  for (const s of [0.66, 0.36]) {
     lensPath(ctx, W, H, mirror, s);
     ctx.stroke();
   }
-  const meshCx = mirror * 0.5 * W;
-  for (let k = 0; k < 5; k++) {
-    const ang = lerp(-1.1, 1.1, k / 4);
-    ctx.beginPath();
-    ctx.moveTo(meshCx, 0);
-    ctx.lineTo(meshCx + Math.cos(ang) * W * 0.6 * mirror, Math.sin(ang) * H * 0.55);
-    ctx.stroke();
-  }
-  // specular highlight near the upper-inner edge
+  // soft specular sheen across the upper-outer lobe
   ctx.globalCompositeOperation = "lighter";
-  softBlob(ctx, mirror * 0.32 * W, -H * 0.22, W * 0.42, "255,255,255", 0.45);
+  softBlob(ctx, mirror * 0.52 * W, -H * 0.24, W * 0.42, "255,255,255", 0.32);
   ctx.restore();
 
-  // inner thin web rib
+  // inner thin rib just inside the rim
   lensPath(ctx, W, H, mirror, 0.9);
   ctx.strokeStyle = "rgba(10,10,12,0.5)";
   ctx.lineWidth = 2.5 * scale;
@@ -277,11 +279,15 @@ export function renderSpidermanScene(ctx: CanvasRenderingContext2D, a: Spiderman
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
-  // Lens geometry — sized and lowered so the motif anchors to the grid.
-  const lensCy = height * 0.282;
-  const lensW = width * 0.345;
-  const lensH = lensW * 0.62;
-  const gap = width * 0.075;
+  // Faded familiar backdrop — the night-city skyline rising behind the lenses.
+  // Much fainter on the monochrome suit, where it has no colour to read against.
+  drawSkyline(ctx, width, gridTop, height * 0.12, g, scale, g.treatment === "noir" ? 0.4 : 1);
+
+  // Lens geometry — large hero eyes, anchored above the grid.
+  const lensCy = height * 0.265;
+  const lensW = width * 0.36;
+  const lensH = lensW * 0.82;
+  const gap = width * 0.05;
 
   // classic: faint implied-red suit glow behind the lenses.
   if (g.treatment === "classic") {
@@ -294,12 +300,18 @@ export function renderSpidermanScene(ctx: CanvasRenderingContext2D, a: Spiderman
   // 2) Hero halo so the lenses feel lit, not pasted.
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
-  softBlob(ctx, width / 2, lensCy, width * 0.5, g.accentRGB, 0.1);
+  softBlob(ctx, width / 2, lensCy, width * 0.5, g.accentRGB, 0.07);
   ctx.restore();
 
-  // 3) Faint corner webbing (top corners only).
-  drawCornerWeb(ctx, 0, 0, 0, Math.PI / 2, width * 0.5, g.web, scale);
-  drawCornerWeb(ctx, width, 0, Math.PI / 2, Math.PI, width * 0.5, g.web, scale);
+  // Fade the very top so the skyline doesn't fight the lock-screen clock.
+  const topFade = ctx.createLinearGradient(0, 0, 0, height * 0.2);
+  topFade.addColorStop(0, g.bgTop);
+  topFade.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.save();
+  ctx.globalAlpha = 0.7;
+  ctx.fillStyle = topFade;
+  ctx.fillRect(0, 0, width, height * 0.2);
+  ctx.restore();
 
   // 4) The lenses.
   drawLens(ctx, width / 2 + gap / 2, lensCy, lensW, lensH, 1, g, scale);
@@ -321,6 +333,10 @@ export function renderSpidermanScene(ctx: CanvasRenderingContext2D, a: Spiderman
       roundRectPath(ctx, x, y, cellSize, cellSize, cornerRadius);
       ctx.fillStyle = g.empty;
       ctx.fill();
+      // faint border so the grid structure reads even where cells are empty
+      ctx.strokeStyle = g.emptyEdge;
+      ctx.lineWidth = 1 * scale;
+      ctx.stroke();
       continue;
     }
     const rgb = g.rampRGB[lv];
@@ -401,9 +417,9 @@ export function drawSpidermanThumb(ctx: CanvasRenderingContext2D, variant: Spide
   const g = GRADES[variant];
   ctx.fillStyle = g.bgBot;
   ctx.fillRect(0, 0, S, S);
-  const lw = S * 0.4;
-  const lh = lw * 0.62;
-  const gp = S * 0.07;
+  const lw = S * 0.36;
+  const lh = lw * 0.82;
+  const gp = S * 0.05;
   drawLens(ctx, S / 2 + gp / 2, S * 0.42, lw, lh, 1, g, S / 393 * 3);
   drawLens(ctx, S / 2 - gp / 2, S * 0.42, lw, lh, -1, g, S / 393 * 3);
   const cell = S * 0.15;

@@ -10,11 +10,3 @@ export const SPIDERMAN_VARIANTS: SpidermanVariant[] = [
   "symbiote",
   "verse",
 ];
-
-// Each suit's words, shown as a tagline under the web.
-export const SPIDERMAN_WORDS: Record<SpidermanVariant, string> = {
-  classic: "With Great Power",
-  miles: "Anyone Can Wear The Mask",
-  symbiote: "Embrace The Dark",
-  verse: "It Always Fits",
-};
