@@ -1,5 +1,6 @@
 import type { MinecraftVariant } from "./lib/minecraft";
 import type { OnePieceVariant } from "./lib/onepiece";
+import type { AttackOnTitanVariant } from "./lib/attackontitan";
 
 export interface Theme {
   name: string;
@@ -10,8 +11,8 @@ export interface Theme {
   subtext: string;
   // When set, cells are drawn as pixel-art icons instead of plain boxes/circles.
   // `empty`/`levels` only feed the theme-picker swatch in these modes.
-  style?: "minecraft" | "onepiece";
-  variant?: MinecraftVariant | OnePieceVariant;
+  style?: "minecraft" | "onepiece" | "attackontitan";
+  variant?: MinecraftVariant | OnePieceVariant | AttackOnTitanVariant;
 }
 
 export const THEMES: Record<string, Theme> = {
@@ -143,6 +144,70 @@ export const THEMES: Record<string, Theme> = {
     levels: ["#7a6420", "#b09030", "#d4b040", "#f0cc50"],
     text: "#fff0cc",
     subtext: "#c09840",
+  },
+
+  // ── Attack on Titan styles ────────────────────────────────────────────────
+  // Cells render as the Survey Corps "Wings of Freedom" pixel emblem
+  // (see src/lib/attackontitan.ts). `empty`/`levels` only feed the swatch.
+  "aot-wingsoffreedom": {
+    name: "Wings of Freedom",
+    style: "attackontitan",
+    variant: "wingsoffreedom",
+    background: "#0e1117",
+    empty: "#1c222c",
+    levels: ["#39477a", "#4a63b0", "#6f93e0", "#a7c4ff"],
+    text: "#e8edf6",
+    subtext: "#7e8aa0",
+  },
+  "aot-colossal": {
+    name: "Colossal Titan",
+    style: "attackontitan",
+    variant: "colossal",
+    background: "#140a0a",
+    empty: "#1a1416",
+    levels: ["#5a1a14", "#8a241a", "#b83020", "#e04030"],
+    text: "#f6e6e2",
+    subtext: "#a07c74",
+  },
+  "aot-attacktitan": {
+    name: "Attack Titan",
+    style: "attackontitan",
+    variant: "attacktitan",
+    background: "#100c08",
+    empty: "#1e150e",
+    levels: ["#4a3418", "#7a5420", "#b07c2e", "#e0a848"],
+    text: "#f6ecd8",
+    subtext: "#b09a72",
+  },
+  "aot-militarypolice": {
+    name: "Military Police",
+    style: "attackontitan",
+    variant: "militarypolice",
+    background: "#0e140e",
+    empty: "#16241a",
+    levels: ["#2c4a30", "#3f6b44", "#5a9458", "#7fbe72"],
+    text: "#e6f0e6",
+    subtext: "#88a888",
+  },
+  "aot-garrison": {
+    name: "Garrison Regiment",
+    style: "attackontitan",
+    variant: "garrison",
+    background: "#16100e",
+    empty: "#241612",
+    levels: ["#5a2420", "#8a352c", "#b3463a", "#d65a48"],
+    text: "#f6e4e0",
+    subtext: "#b08a82",
+  },
+  "aot-cadetcorps": {
+    name: "Cadet Corps",
+    style: "attackontitan",
+    variant: "cadetcorps",
+    background: "#0f1216",
+    empty: "#1a2028",
+    levels: ["#3a4654", "#566678", "#7c8da0", "#aab8c8"],
+    text: "#eaeef4",
+    subtext: "#8c98a6",
   },
 };
 
