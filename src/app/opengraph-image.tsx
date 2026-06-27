@@ -17,18 +17,30 @@ export default async function Image() {
   const empty = "#161b22";
   const levels = ["#0e4429", "#006d32", "#26a641", "#39d353"];
 
-  // Generate a random-looking but deterministic GitHub graph pattern
-  // We use 360 boxes which fills the screen perfectly without crashing Satori
-  const boxes = Array.from({ length: 360 }).map((_, i) => {
-    // 65% chance of being empty, 35% chance of having a contribution
-    const val = (Math.sin(i * 13) * Math.cos(i * 17)) * 100;
-    
-    if (val > 80) return levels[3];
-    if (val > 60) return levels[2];
-    if (val > 40) return levels[1];
-    if (val > 20) return levels[0];
-    return empty;
-  });
+  // Create a massive grid of tiny dots using SVG
+  const cols = 50;
+  const rows = 90;
+  const boxSize = 4;
+  const gap = 2;
+  const step = boxSize + gap;
+  
+  let rects = "";
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      // Deterministic randomness for graph
+      const val = (Math.sin(r * 13) * Math.cos(c * 17)) * 100;
+      let color = empty;
+      if (val > 80) color = levels[3];
+      else if (val > 60) color = levels[2];
+      else if (val > 40) color = levels[1];
+      else if (val > 20) color = levels[0];
+
+      rects += `<rect x="${c * step}" y="${r * step}" width="${boxSize}" height="${boxSize}" rx="1" fill="${color}" />`;
+    }
+  }
+
+  const svgString = `<svg width="${cols * step}" height="${rows * step}" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
+  const base64Svg = `data:image/svg+xml;base64,${btoa(svgString)}`;
 
   return new ImageResponse(
     (
@@ -109,7 +121,7 @@ export default async function Image() {
               flexDirection: "column",
               alignItems: "center",
               marginTop: "70px",
-              marginBottom: "20px",
+              marginBottom: "30px",
               zIndex: 10,
             }}
           >
@@ -129,31 +141,17 @@ export default async function Image() {
             </div>
           </div>
 
-          {/* Full Screen GitHub Graph Grid */}
+          {/* Full Screen GitHub Graph Grid as SVG Background */}
           <div
             style={{
               display: "flex",
-              flexWrap: "wrap",
-              gap: "3px",
-              padding: "0 12px", // Tight padding to edge
-              justifyContent: "flex-start",
-              width: "100%",
-              height: "100%",
-              background: bg,
+              width: "300px",
+              height: "540px",
+              backgroundImage: `url(${base64Svg})`,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "top center",
             }}
-          >
-            {boxes.map((color, i) => (
-              <div
-                key={i}
-                style={{
-                  width: "13px",
-                  height: "13px",
-                  borderRadius: "2px",
-                  background: color,
-                }}
-              />
-            ))}
-          </div>
+          />
           
           {/* Bottom Bar indicator */}
           <div
