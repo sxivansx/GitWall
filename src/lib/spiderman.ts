@@ -15,6 +15,6 @@ export const SPIDERMAN_VARIANTS: SpidermanVariant[] = [
 export const SPIDERMAN_WORDS: Record<SpidermanVariant, string> = {
   classic: "With Great Power",
   miles: "Anyone Can Wear The Mask",
-  symbiote: "We Are Venom",
+  symbiote: "Embrace The Dark",
   verse: "It Always Fits",
 };
