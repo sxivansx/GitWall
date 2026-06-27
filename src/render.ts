@@ -8,11 +8,19 @@ import { drawOnePieceCell } from "./lib/onepiece";
 import type { OnePieceVariant } from "./lib/onepiece";
 import type { AttackOnTitanVariant } from "./lib/attackontitan";
 import { renderAotScene } from "./lib/aotScene";
+import { renderGotScene } from "./lib/gotScene";
+import { GAMEOFTHRONES_WORDS, type GameOfThronesVariant } from "./lib/gameofthrones";
 import type { ContributionCalendar } from "./github";
 
 const fontsDir = path.join(process.cwd(), "fonts");
 registerFont(path.join(fontsDir, "Inter-Regular.ttf"), { family: "Inter" });
 registerFont(path.join(fontsDir, "Inter-Bold.ttf"), { family: "Inter", weight: "bold" });
+// Cinzel: an open-source Trajan-style Roman serif used for the Game of Thrones
+// house mottos, evoking the show's inscriptional title lettering. Registered under
+// both bold and default weight (same file on purpose) so `bold ...px Cinzel` and a
+// plain `Cinzel` request both resolve to this TTF.
+registerFont(path.join(fontsDir, "Cinzel.ttf"), { family: "Cinzel", weight: "bold" });
+registerFont(path.join(fontsDir, "Cinzel.ttf"), { family: "Cinzel" });
 
 // The product's own domain, baked into every wallpaper as a watermark.
 export const WATERMARK = "gitwall.space";
@@ -102,12 +110,12 @@ export function renderWallpaper(
   // Show the most recent N days
   const recentDays = allDays.slice(-totalCells);
 
-  // Draw cells. Minecraft themes draw pixel-art blocks; everything else draws a
-  // solid box/circle. Pixel art needs antialiasing off so block edges stay
-  // crisp — it's restored before the text below.
-  const isMinecraft = theme.style === "minecraft";
-  const isOnePiece = theme.style === "onepiece";
+  // Draw cells. Attack on Titan and Game of Thrones each take over the whole
+  // canvas (no per-cell tiles); Minecraft/One Piece draw pixel-art per cell;
+  // everything else draws a solid box/circle. Pixel art needs antialiasing off so
+  // block edges stay crisp — it's restored before the text below.
   const isAttackOnTitan = theme.style === "attackontitan";
+  const isGot = theme.style === "gameofthrones";
 
   if (isAttackOnTitan) {
     // Attack on Titan takes over the whole canvas: the grid becomes the Wall
@@ -118,7 +126,15 @@ export function renderWallpaper(
       cellSize, cellStep, cornerRadius, levels,
       variant: theme.variant as AttackOnTitanVariant,
     });
+  } else if (isGot) {
+    const levels = recentDays.map((d) => getContributionLevel(d.contributionCount));
+    renderGotScene(ctx, {
+      width, height, gridLeft, gridTop, numCols, numRows, cellSize, cellStep,
+      cornerRadius, levels, variant: theme.variant as GameOfThronesVariant,
+    });
   } else {
+    const isMinecraft = theme.style === "minecraft";
+    const isOnePiece = theme.style === "onepiece";
     const isPixelArt = isMinecraft || isOnePiece;
     if (isPixelArt) ctx.antialias = "none";
     for (let i = 0; i < recentDays.length; i++) {
@@ -145,6 +161,29 @@ export function renderWallpaper(
   const bottomMid = gridBottom + Math.round(75 * scale);
 
   ctx.textAlign = "center";
+
+  // Game of Thrones houses carry their words as a letter-spaced motto above the
+  // username, in the house's own accent colour.
+  if (isGot) {
+    const words = GAMEOFTHRONES_WORDS[theme.variant as GameOfThronesVariant];
+    if (words) {
+      ctx.save();
+      ctx.fillStyle = theme.text;
+      ctx.font = `bold ${Math.round(15 * scale)}px Cinzel`;
+      try {
+        (ctx as unknown as { letterSpacing: string }).letterSpacing = `${Math.round(4 * scale)}px`;
+      } catch {
+        /* letterSpacing unsupported */
+      }
+      ctx.fillText(words.toUpperCase(), width / 2, bottomMid - Math.round(40 * scale));
+      try {
+        (ctx as unknown as { letterSpacing: string }).letterSpacing = "0px";
+      } catch {
+        /* letterSpacing unsupported */
+      }
+      ctx.restore();
+    }
+  }
 
   if (user) {
     ctx.fillStyle = theme.text;
