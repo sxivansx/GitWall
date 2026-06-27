@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 const title = "GitWall — GitHub Contribution Wallpapers";
 const description =
-  "Generate wallpapers from your GitHub contribution graph, with auto-updating lock screen support via shortcuts.";
+  "Generate wallpapers from your GitHub contribution graph, with auto-updating lock screen support.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://gitwall.space"),
