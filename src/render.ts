@@ -10,6 +10,8 @@ import type { AttackOnTitanVariant } from "./lib/attackontitan";
 import { renderAotScene } from "./lib/aotScene";
 import { renderGotScene } from "./lib/gotScene";
 import { GAMEOFTHRONES_WORDS, type GameOfThronesVariant } from "./lib/gameofthrones";
+import { renderSpidermanScene } from "./lib/spidermanScene";
+import { SPIDERMAN_WORDS, type SpidermanVariant } from "./lib/spiderman";
 import type { ContributionCalendar } from "./github";
 
 const fontsDir = path.join(process.cwd(), "fonts");
@@ -116,6 +118,7 @@ export function renderWallpaper(
   // block edges stay crisp — it's restored before the text below.
   const isAttackOnTitan = theme.style === "attackontitan";
   const isGot = theme.style === "gameofthrones";
+  const isSpiderman = theme.style === "spiderman";
 
   if (isAttackOnTitan) {
     // Attack on Titan takes over the whole canvas: the grid becomes the Wall
@@ -131,6 +134,12 @@ export function renderWallpaper(
     renderGotScene(ctx, {
       width, height, gridLeft, gridTop, numCols, numRows, cellSize, cellStep,
       cornerRadius, levels, variant: theme.variant as GameOfThronesVariant,
+    });
+  } else if (isSpiderman) {
+    const levels = recentDays.map((d) => getContributionLevel(d.contributionCount));
+    renderSpidermanScene(ctx, {
+      width, height, gridLeft, gridTop, numCols, numRows, cellSize, cellStep,
+      cornerRadius, levels, variant: theme.variant as SpidermanVariant,
     });
   } else {
     const isMinecraft = theme.style === "minecraft";
@@ -172,6 +181,28 @@ export function renderWallpaper(
       ctx.font = `bold ${Math.round(15 * scale)}px Cinzel`;
       try {
         (ctx as unknown as { letterSpacing: string }).letterSpacing = `${Math.round(4 * scale)}px`;
+      } catch {
+        /* letterSpacing unsupported */
+      }
+      ctx.fillText(words.toUpperCase(), width / 2, bottomMid - Math.round(40 * scale));
+      try {
+        (ctx as unknown as { letterSpacing: string }).letterSpacing = "0px";
+      } catch {
+        /* letterSpacing unsupported */
+      }
+      ctx.restore();
+    }
+  }
+
+  // Spider-Man carries its suit's words as a tagline above the username.
+  if (isSpiderman) {
+    const words = SPIDERMAN_WORDS[theme.variant as SpidermanVariant];
+    if (words) {
+      ctx.save();
+      ctx.fillStyle = theme.text;
+      ctx.font = `bold ${Math.round(14 * scale)}px Inter`;
+      try {
+        (ctx as unknown as { letterSpacing: string }).letterSpacing = `${Math.round(2 * scale)}px`;
       } catch {
         /* letterSpacing unsupported */
       }

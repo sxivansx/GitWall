@@ -2,6 +2,7 @@ import type { MinecraftVariant } from "./lib/minecraft";
 import type { OnePieceVariant } from "./lib/onepiece";
 import type { AttackOnTitanVariant } from "./lib/attackontitan";
 import type { GameOfThronesVariant } from "./lib/gameofthrones";
+import type { SpidermanVariant } from "./lib/spiderman";
 
 export interface Theme {
   name: string;
@@ -13,8 +14,8 @@ export interface Theme {
   // When set, cells are drawn as pixel-art icons instead of plain boxes/circles,
   // or (attackontitan/gameofthrones) the whole calendar is rendered as one scene.
   // `empty`/`levels` only feed the theme-picker swatch in these modes.
-  style?: "minecraft" | "onepiece" | "attackontitan" | "gameofthrones";
-  variant?: MinecraftVariant | OnePieceVariant | AttackOnTitanVariant | GameOfThronesVariant;
+  style?: "minecraft" | "onepiece" | "attackontitan" | "gameofthrones" | "spiderman";
+  variant?: MinecraftVariant | OnePieceVariant | AttackOnTitanVariant | GameOfThronesVariant | SpidermanVariant;
 }
 
 export const THEMES: Record<string, Theme> = {
@@ -255,6 +256,51 @@ export const THEMES: Record<string, Theme> = {
     levels: ["#1a4e96", "#5cb4ff", "#c4ecff", "#ffffff"],
     text: "#eaf4ff",
     subtext: "#88a4c0",
+  },
+
+  // ── Spider-Man ────────────────────────────────────────────────────────────
+  // The whole calendar renders as one scene (src/lib/spidermanScene.ts): a
+  // spider-web with a glowing emblem, your year woven into the grid. Each suit
+  // re-grades and re-styles it. `empty`/`levels` only feed the picker swatch.
+  "spiderman-classic": {
+    name: "Amazing",
+    style: "spiderman",
+    variant: "classic",
+    background: "#0e1426",
+    empty: "#1e294a",
+    levels: ["#9c1a2e", "#cf1f3c", "#f23048", "#ff5e74"],
+    text: "#ffe1e6",
+    subtext: "#b07a86",
+  },
+  "spiderman-miles": {
+    name: "Miles Morales",
+    style: "spiderman",
+    variant: "miles",
+    background: "#0a0712",
+    empty: "#241c40",
+    levels: ["#1c2a8e", "#2f6fe6", "#26b4ff", "#8fe0ff"],
+    text: "#e6efff",
+    subtext: "#8290c0",
+  },
+  "spiderman-symbiote": {
+    name: "Symbiote",
+    style: "spiderman",
+    variant: "symbiote",
+    background: "#0a090d",
+    empty: "#2c2c34",
+    levels: ["#54555f", "#82838f", "#bdbec8", "#ffffff"],
+    text: "#f2f2f8",
+    subtext: "#8a8a96",
+  },
+  "spiderman-verse": {
+    name: "Spider-Verse",
+    style: "spiderman",
+    variant: "verse",
+    background: "#160a28",
+    empty: "#301840",
+    levels: ["#5a1a8c", "#9c1fc0", "#e01f90", "#ffe23d"],
+    text: "#ffe6f6",
+    subtext: "#b07ab0",
   },
 };
 

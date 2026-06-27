@@ -8,15 +8,18 @@ import { MINECRAFT_THUMBS } from "@/lib/minecraftThumbs";
 import { ONEPIECE_THUMBS } from "@/lib/onepieceThumbs";
 import { AOT_THUMBS } from "@/lib/aotThumbs";
 import { GOT_THUMBS } from "@/lib/gotThumbs";
+import { SPIDERMAN_THUMBS } from "@/lib/spidermanThumbs";
 
 const MINECRAFT_DEFAULT = "minecraft-slime";
 const ONEPIECE_DEFAULT = "onepiece-jollyroger";
 const AOT_DEFAULT = "aot-wingsoffreedom";
 const GOT_DEFAULT = "got-targaryen";
+const SPIDERMAN_DEFAULT = "spiderman-classic";
 const isMinecraftId = (id: string) => id.startsWith("minecraft-");
 const isOnePieceId = (id: string) => id.startsWith("onepiece-");
 const isAotId = (id: string) => id.startsWith("aot-");
 const isGotId = (id: string) => id.startsWith("got-");
+const isSpidermanId = (id: string) => id.startsWith("spiderman-");
 
 type Theme = { id: string; name: string; colors: string[]; background: string };
 type Device = { id: string; name: string };
@@ -359,7 +362,7 @@ export default function Home() {
   // single picker tiles that expand to show their variants; everything else stays
   // in the flat theme grid.
   const gridThemes = themes.filter(
-    (t) => !isMinecraftId(t.id) && !isOnePieceId(t.id) && !isAotId(t.id) && !isGotId(t.id)
+    (t) => !isMinecraftId(t.id) && !isOnePieceId(t.id) && !isAotId(t.id) && !isGotId(t.id) && !isSpidermanId(t.id)
   );
   const minecraftThemes = themes.filter((t) => isMinecraftId(t.id));
   const onepieceThemes = themes.filter((t) => isOnePieceId(t.id));
@@ -373,6 +376,9 @@ export default function Home() {
   const minecraftGroup = minecraftThemes.find((t) => t.id === MINECRAFT_DEFAULT) ?? minecraftThemes[0];
   const onepieceGroup = onepieceThemes.find((t) => t.id === ONEPIECE_DEFAULT) ?? onepieceThemes[0];
   const gotGroup = gotThemes.find((t) => t.id === GOT_DEFAULT) ?? gotThemes[0];
+  const spidermanThemes = themes.filter((t) => isSpidermanId(t.id));
+  const spidermanSelected = isSpidermanId(selectedTheme);
+  const spidermanGroup = spidermanThemes.find((t) => t.id === SPIDERMAN_DEFAULT) ?? spidermanThemes[0];
 
 
   const iphoneGuide = (
@@ -671,7 +677,7 @@ export default function Home() {
 
                 {/* Shape lives with General — it only changes how these solid cells
                     are drawn (box vs circle); pixel-art/full-scene themes ignore it. */}
-                {!minecraftSelected && !onepieceSelected && !aotSelected && !gotSelected && (
+                {!minecraftSelected && !onepieceSelected && !aotSelected && !gotSelected && !spidermanSelected && (
                   <div className="mt-3 flex items-center gap-2.5">
                     <span className="text-[11px] font-medium text-white/30">Shape</span>
                     <div className="inline-flex gap-1 p-1 bg-white/[0.04] border border-white/[0.08] rounded-lg">
@@ -795,6 +801,30 @@ export default function Home() {
                       </div>
                       <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
                         Game of Thrones
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Spider-Man group */}
+                  {spidermanGroup && (
+                    <button
+                      onClick={() => { if (!spidermanSelected) setSelectedTheme(SPIDERMAN_DEFAULT); }}
+                      aria-pressed={spidermanSelected}
+                      aria-label="Spider-Man themes"
+                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
+                        spidermanSelected
+                          ? "border-white/50 ring-1 ring-white/10"
+                          : "border-white/[0.07] hover:border-white/20"
+                      }`}
+                      style={{ background: spidermanGroup.background }}
+                    >
+                      <div className="flex gap-1 justify-center mb-1.5">
+                        {spidermanGroup.colors.map((c, i) => (
+                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
+                        Spider-Man
                       </span>
                     </button>
                   )}
@@ -948,6 +978,46 @@ export default function Home() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={GOT_THUMBS[variant]}
+                              alt=""
+                              width={28}
+                              height={28}
+                              className="w-7 h-7 rounded-[3px]"
+                            />
+                            <span className={`text-[12px] font-semibold ${active ? "text-white" : "text-white/55"}`}>
+                              {t.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Spider-Man variants */}
+                {spidermanSelected && spidermanThemes.length > 0 && (
+                  <div className="mt-3 p-3 rounded-xl border border-white/[0.07] bg-white/[0.02]">
+                    <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">
+                      Suit
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {spidermanThemes.map((t) => {
+                        const variant = t.id.replace("spiderman-", "");
+                        const active = selectedTheme === t.id;
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => setSelectedTheme(t.id)}
+                            aria-pressed={active}
+                            aria-label={`${t.name} suit`}
+                            className={`flex items-center gap-2.5 pl-1.5 pr-3.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                              active
+                                ? "border-white/50 ring-1 ring-white/10 bg-white/[0.04]"
+                                : "border-white/[0.07] hover:border-white/20"
+                            }`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={SPIDERMAN_THUMBS[variant]}
                               alt=""
                               width={28}
                               height={28}
