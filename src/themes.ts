@@ -13,7 +13,7 @@ export interface Theme {
   // When set, cells are drawn as pixel-art icons instead of plain boxes/circles,
   // or (attackontitan/gameofthrones) the whole calendar is rendered as one scene.
   // `empty`/`levels` only feed the theme-picker swatch in these modes.
-  style?: "minecraft" | "onepiece" | "attackontitan" | "gameofthrones";
+  style?: "minecraft" | "onepiece" | "attackontitan" | "gameofthrones" | "pointblank";
   variant?: MinecraftVariant | OnePieceVariant | AttackOnTitanVariant | GameOfThronesVariant;
 }
 
@@ -255,6 +255,20 @@ export const THEMES: Record<string, Theme> = {
     levels: ["#1a4e96", "#5cb4ff", "#c4ecff", "#ffffff"],
     text: "#eaf4ff",
     subtext: "#88a4c0",
+  },
+
+  // ── Point Blank ───────────────────────────────────────────────────────────
+  // The whole calendar renders as one terminal screen (see src/lib/pbScene.ts):
+  // your year is the code, clasped by the giant `<.>` brackets of the logo, with
+  // a cursor block on today. `empty`/`levels` only feed the theme-picker swatch.
+  pointblank: {
+    name: "Point Blank",
+    style: "pointblank",
+    background: "#04070a",
+    empty: "#1a3022",
+    levels: ["#0d5230", "#10914c", "#00c853", "#5dffa0"],
+    text: "#d6ffe6",
+    subtext: "#6fbf90",
   },
 };
 

@@ -10,6 +10,7 @@ import type { AttackOnTitanVariant } from "./lib/attackontitan";
 import { renderAotScene } from "./lib/aotScene";
 import { renderGotScene } from "./lib/gotScene";
 import { GAMEOFTHRONES_WORDS, type GameOfThronesVariant } from "./lib/gameofthrones";
+import { renderPbScene } from "./lib/pbScene";
 import type { ContributionCalendar } from "./github";
 
 const fontsDir = path.join(process.cwd(), "fonts");
@@ -21,6 +22,9 @@ registerFont(path.join(fontsDir, "Inter-Bold.ttf"), { family: "Inter", weight: "
 // plain `Cinzel` request both resolve to this TTF.
 registerFont(path.join(fontsDir, "Cinzel.ttf"), { family: "Cinzel", weight: "bold" });
 registerFont(path.join(fontsDir, "Cinzel.ttf"), { family: "Cinzel" });
+// JetBrains Mono: the terminal typeface for the Point Blank theme's shell prompt.
+registerFont(path.join(fontsDir, "JetBrainsMono-Regular.ttf"), { family: "JetBrains Mono" });
+registerFont(path.join(fontsDir, "JetBrainsMono-Bold.ttf"), { family: "JetBrains Mono", weight: "bold" });
 
 // The product's own domain, baked into every wallpaper as a watermark.
 export const WATERMARK = "gitwall.space";
@@ -116,6 +120,7 @@ export function renderWallpaper(
   // block edges stay crisp — it's restored before the text below.
   const isAttackOnTitan = theme.style === "attackontitan";
   const isGot = theme.style === "gameofthrones";
+  const isPointBlank = theme.style === "pointblank";
 
   if (isAttackOnTitan) {
     // Attack on Titan takes over the whole canvas: the grid becomes the Wall
@@ -131,6 +136,12 @@ export function renderWallpaper(
     renderGotScene(ctx, {
       width, height, gridLeft, gridTop, numCols, numRows, cellSize, cellStep,
       cornerRadius, levels, variant: theme.variant as GameOfThronesVariant,
+    });
+  } else if (isPointBlank) {
+    const levels = recentDays.map((d) => getContributionLevel(d.contributionCount));
+    renderPbScene(ctx, {
+      width, height, gridLeft, gridTop, numCols, numRows, cellSize, cellStep,
+      cornerRadius, levels,
     });
   } else {
     const isMinecraft = theme.style === "minecraft";
@@ -183,6 +194,26 @@ export function renderWallpaper(
       }
       ctx.restore();
     }
+  }
+
+  // Point Blank's wordmark, two-toned like the official lockup — "Point" in the
+  // brand emerald, "Blank" muted, in the terminal typeface.
+  if (isPointBlank) {
+    ctx.save();
+    ctx.font = `bold ${Math.round(16 * scale)}px "JetBrains Mono"`;
+    ctx.textAlign = "left";
+    const p1 = "Point ";
+    const p2 = "Blank";
+    const w1 = ctx.measureText(p1).width;
+    const w2 = ctx.measureText(p2).width;
+    const startX = width / 2 - (w1 + w2) / 2;
+    const wy = bottomMid - Math.round(40 * scale);
+    ctx.fillStyle = theme.levels[2];
+    ctx.fillText(p1, startX, wy);
+    ctx.fillStyle = "#7f8f84";
+    ctx.fillText(p2, startX + w1, wy);
+    ctx.restore();
+    ctx.textAlign = "center";
   }
 
   if (user) {
