@@ -630,41 +630,16 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Shape — not applicable to pixel-art or full-scene styles */}
-              {!minecraftSelected && !onepieceSelected && !aotSelected && !gotSelected && (
-                <div className="mb-7">
-                  <label className="block text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-2.5">
-                    Shape
-                  </label>
-                  <div className="inline-flex gap-1 p-1 bg-white/[0.04] border border-white/[0.08] rounded-lg">
-                    {[
-                      { id: "box", name: "Box", Icon: Square },
-                      { id: "circle", name: "Circular", Icon: Circle },
-                    ].map(({ id, name, Icon }) => (
-                      <button
-                        key={id}
-                        onClick={() => setShape(id)}
-                        aria-pressed={shape === id}
-                        aria-label={`${name} cells`}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-[12px] font-semibold transition-colors cursor-pointer ${
-                          shape === id
-                            ? "bg-white text-black"
-                            : "text-white/50 hover:text-white"
-                        }`}
-                      >
-                        <Icon className="size-3.5" />
-                        {name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* Theme */}
               <div>
                 <label className="block text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">
                   Theme
                 </label>
+
+                {/* General — solid box/dot themes; the Shape selector applies to these */}
+                <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-2.5">
+                  General
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {gridThemes.map((t) => (
                     <button
@@ -692,7 +667,42 @@ export default function Home() {
                       </span>
                     </button>
                   ))}
+                </div>
 
+                {/* Shape lives with General — it only changes how these solid cells
+                    are drawn (box vs circle); pixel-art/full-scene themes ignore it. */}
+                {!minecraftSelected && !onepieceSelected && !aotSelected && !gotSelected && (
+                  <div className="mt-3 flex items-center gap-2.5">
+                    <span className="text-[11px] font-medium text-white/30">Shape</span>
+                    <div className="inline-flex gap-1 p-1 bg-white/[0.04] border border-white/[0.08] rounded-lg">
+                      {[
+                        { id: "box", name: "Box", Icon: Square },
+                        { id: "circle", name: "Circular", Icon: Circle },
+                      ].map(({ id, name, Icon }) => (
+                        <button
+                          key={id}
+                          onClick={() => setShape(id)}
+                          aria-pressed={shape === id}
+                          aria-label={`${name} cells`}
+                          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[12px] font-semibold transition-colors cursor-pointer ${
+                            shape === id
+                              ? "bg-white text-black"
+                              : "text-white/50 hover:text-white"
+                          }`}
+                        >
+                          <Icon className="size-3.5" />
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Special — show themes; selecting one expands its variants below */}
+                <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mt-5 mb-2.5">
+                  Special
+                </p>
+                <div className="flex flex-wrap gap-2">
                   {/* Minecraft group — opens the block-style sub-options below */}
                   {minecraftGroup && (
                     <button
