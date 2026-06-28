@@ -2,6 +2,7 @@ import type { MinecraftVariant } from "./lib/minecraft";
 import type { OnePieceVariant } from "./lib/onepiece";
 import type { AttackOnTitanVariant } from "./lib/attackontitan";
 import type { GameOfThronesVariant } from "./lib/gameofthrones";
+import type { PokemonVariant } from "./lib/pokemon";
 
 export interface Theme {
   name: string;
@@ -13,8 +14,8 @@ export interface Theme {
   // When set, cells are drawn as pixel-art icons instead of plain boxes/circles,
   // or (attackontitan/gameofthrones) the whole calendar is rendered as one scene.
   // `empty`/`levels` only feed the theme-picker swatch in these modes.
-  style?: "minecraft" | "onepiece" | "attackontitan" | "gameofthrones" | "pointblank";
-  variant?: MinecraftVariant | OnePieceVariant | AttackOnTitanVariant | GameOfThronesVariant;
+  style?: "minecraft" | "onepiece" | "attackontitan" | "gameofthrones" | "pokemon" | "pointblank";
+  variant?: MinecraftVariant | OnePieceVariant | AttackOnTitanVariant | GameOfThronesVariant | PokemonVariant;
 }
 
 export const THEMES: Record<string, Theme> = {
@@ -269,6 +270,51 @@ export const THEMES: Record<string, Theme> = {
     levels: ["#0d5230", "#10914c", "#00c853", "#5dffa0"],
     text: "#d6ffe6",
     subtext: "#6fbf90",
+  },
+
+  // Pokémon: a retro Pokédex handheld with a Game Boy-style screen (see
+  // src/lib/pokemonScene.ts). `background` is the device colour and `levels`
+  // the screen palette — these only feed the picker swatch; the scene renderer
+  // paints the real wallpaper. `text`/`subtext` must read on the device body.
+  "pokemon-pikachu": {
+    name: "Pikachu",
+    style: "pokemon",
+    variant: "pikachu",
+    background: "#e8b81c",
+    empty: "#2a2406",
+    levels: ["#2a2406", "#6e5e12", "#c2a426", "#f2d63e"],
+    text: "#201702",
+    subtext: "#332604",
+  },
+  "pokemon-charizard": {
+    name: "Charizard",
+    style: "pokemon",
+    variant: "charizard",
+    background: "#d4452a",
+    empty: "#341206",
+    levels: ["#341206", "#7a3010", "#c86420", "#f4a23a"],
+    text: "#ffe2d4",
+    subtext: "#e8a890",
+  },
+  "pokemon-mewtwo": {
+    name: "Mewtwo",
+    style: "pokemon",
+    variant: "mewtwo",
+    background: "#7a52b0",
+    empty: "#241636",
+    levels: ["#241636", "#4c2c74", "#8a4cc2", "#caa0f0"],
+    text: "#efe6ff",
+    subtext: "#cdb6e8",
+  },
+  "pokemon-rayquaza": {
+    name: "Rayquaza",
+    style: "pokemon",
+    variant: "rayquaza",
+    background: "#2f9a52",
+    empty: "#0f380f",
+    levels: ["#0f380f", "#306230", "#73a92f", "#9bbc0c"],
+    text: "#dcffe9",
+    subtext: "#a6e6c0",
   },
 };
 
