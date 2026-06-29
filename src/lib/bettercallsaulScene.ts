@@ -1,4 +1,6 @@
-import { type CanvasRenderingContext2D } from "canvas";
+import { type CanvasRenderingContext2D, Image } from "canvas";
+import fs from "fs";
+import path from "path";
 
 export interface BetterCallSaulSceneArgs {
   width: number;
@@ -25,70 +27,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.roundRect(x, y, w, h, r);
 }
 
-function drawScalesOfJustice(ctx: CanvasRenderingContext2D, cx: number, cy: number, scale: number) {
-  ctx.save();
-  ctx.fillStyle = TEXT_BLACK;
-  ctx.strokeStyle = TEXT_BLACK;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-
-  // Center pillar
-  ctx.fillRect(cx - 5 * scale, cy - 80 * scale, 10 * scale, 160 * scale);
-  // Base
-  ctx.beginPath();
-  ctx.moveTo(cx - 40 * scale, cy + 80 * scale);
-  ctx.lineTo(cx + 40 * scale, cy + 80 * scale);
-  ctx.lineTo(cx + 30 * scale, cy + 60 * scale);
-  ctx.lineTo(cx - 30 * scale, cy + 60 * scale);
-  ctx.closePath();
-  ctx.fill();
-  
-  // Top decorative knob
-  ctx.beginPath();
-  ctx.arc(cx, cy - 85 * scale, 12 * scale, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Balance beam
-  ctx.lineWidth = 8 * scale;
-  ctx.beginPath();
-  ctx.moveTo(cx - 90 * scale, cy - 60 * scale);
-  ctx.lineTo(cx + 90 * scale, cy - 60 * scale);
-  ctx.stroke();
-
-  // Left Scale
-  ctx.lineWidth = 3 * scale;
-  ctx.beginPath();
-  ctx.moveTo(cx - 90 * scale, cy - 60 * scale);
-  ctx.lineTo(cx - 120 * scale, cy + 20 * scale);
-  ctx.moveTo(cx - 90 * scale, cy - 60 * scale);
-  ctx.lineTo(cx - 60 * scale, cy + 20 * scale);
-  ctx.moveTo(cx - 90 * scale, cy - 60 * scale);
-  ctx.lineTo(cx - 90 * scale, cy + 20 * scale);
-  ctx.stroke();
-  
-  // Left Plate
-  ctx.beginPath();
-  ctx.arc(cx - 90 * scale, cy + 20 * scale, 35 * scale, 0, Math.PI);
-  ctx.fill();
-
-  // Right Scale
-  ctx.beginPath();
-  ctx.moveTo(cx + 90 * scale, cy - 60 * scale);
-  ctx.lineTo(cx + 120 * scale, cy + 20 * scale);
-  ctx.moveTo(cx + 90 * scale, cy - 60 * scale);
-  ctx.lineTo(cx + 60 * scale, cy + 20 * scale);
-  ctx.moveTo(cx + 90 * scale, cy - 60 * scale);
-  ctx.lineTo(cx + 90 * scale, cy + 20 * scale);
-  ctx.stroke();
-  
-  // Right Plate
-  ctx.beginPath();
-  ctx.arc(cx + 90 * scale, cy + 20 * scale, 35 * scale, 0, Math.PI);
-  ctx.fill();
-
-  ctx.restore();
-}
-
+// Scales of justice removed
 export function renderBetterCallSaulScene(ctx: CanvasRenderingContext2D, a: BetterCallSaulSceneArgs): void {
   const { width, height, gridLeft, gridTop, numCols, numRows, cellSize, cellStep, cornerRadius, levels } = a;
   const scale = width / 393;
@@ -126,8 +65,8 @@ export function renderBetterCallSaulScene(ctx: CanvasRenderingContext2D, a: Bett
   ctx.translate(width / 2, height * 0.22);
   ctx.rotate(-10 * Math.PI / 180);
   ctx.fillStyle = TEXT_RED;
-  // Use the downloaded Caveat Brush font
-  ctx.font = `${Math.round(64 * scale)}px "Caveat Brush"`;
+  // Use the downloaded Damion font
+  ctx.font = `${Math.round(72 * scale)}px "Damion"`;
   ctx.textAlign = "center";
   ctx.shadowColor = "rgba(0,0,0,0.3)";
   ctx.shadowBlur = 4 * scale;
@@ -137,8 +76,21 @@ export function renderBetterCallSaulScene(ctx: CanvasRenderingContext2D, a: Bett
   ctx.fillText("call Saul!", 20 * scale, 40 * scale);
   ctx.restore();
 
-  // Scales of Justice
-  drawScalesOfJustice(ctx, width * 0.8, height * 0.35, scale);
+  // Saul Goodman silhouette (from user upload)
+  try {
+    const saulBuf = fs.readFileSync(path.join(process.cwd(), "public", "saul2.png"));
+    const saulImg = new Image();
+    saulImg.src = saulBuf;
+    ctx.save();
+    ctx.globalAlpha = 0.12; // very very low transparency
+    // Draw centered beneath the grid
+    const imgW = 350 * scale;
+    const imgH = imgW * (saulImg.height / saulImg.width);
+    ctx.drawImage(saulImg, width / 2 - imgW / 2, height * 0.40, imgW, imgH);
+    ctx.restore();
+  } catch (e) {
+    console.error("Missing saul2.png", e);
+  }
 
   // The Grid
   ctx.save();

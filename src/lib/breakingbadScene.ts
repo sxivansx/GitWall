@@ -139,8 +139,8 @@ export function renderBreakingBadScene(ctx: CanvasRenderingContext2D, a: Breakin
   ctx.fillStyle = floorGrad;
   ctx.fillRect(0, horizon, width, height - horizon);
 
-  // The RV (placed above the grid)
-  drawRV(ctx, width / 2, horizon + 50 * scale, scale);
+  // The RV (placed above the grid, resting on the margin)
+  drawRV(ctx, width / 2, horizon, scale);
 
   // The Grid (Periodic Table Elements)
   ctx.save();

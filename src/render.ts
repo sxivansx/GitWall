@@ -31,8 +31,8 @@ registerFont(path.join(fontsDir, "Cinzel.ttf"), { family: "Cinzel" });
 // JetBrains Mono: the terminal typeface for the Point Blank theme's shell prompt.
 registerFont(path.join(fontsDir, "JetBrainsMono-Regular.ttf"), { family: "JetBrains Mono" });
 registerFont(path.join(fontsDir, "JetBrainsMono-Bold.ttf"), { family: "JetBrains Mono", weight: "bold" });
-// Caveat Brush: alternative brush script for Better Call Saul
-registerFont(path.join(fontsDir, "CaveatBrush-Regular.ttf"), { family: "Caveat Brush" });
+// Damion: thick brush script for Better Call Saul
+registerFont(path.join(fontsDir, "Damion-Regular.ttf"), { family: "Damion" });
 
 // The product's own domain, baked into every wallpaper as a watermark.
 export const WATERMARK = "gitwall.space";

@@ -30,7 +30,7 @@ const isBreakingBadId = (id: string) => id === BREAKINGBAD_ID;
 const isBetterCallSaulId = (id: string) => id === BETTERCALLSAUL_ID;
 const isPokemonId = (id: string) => id.startsWith("pokemon-");
 
-type Theme = { id: string; name: string; colors: string[]; background: string };
+type Theme = { id: string; name: string; colors: string[]; background: string; levels?: string[]; text?: string; };
 type Device = { id: string; name: string };
 
 // First-paint fallbacks derived from the same source-of-truth modules the API
@@ -885,7 +885,7 @@ export default function Home() {
                       style={{ background: breakingbadTheme.background }}
                     >
                       <div className="flex gap-1 justify-center mb-1.5">
-                        {breakingbadTheme.levels.slice(1).map((c, i) => (
+                        {breakingbadTheme.levels?.slice(1).map((c, i) => (
                           <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
                         ))}
                       </div>
@@ -909,7 +909,7 @@ export default function Home() {
                       style={{ background: bettercallsaulTheme.background }}
                     >
                       <div className="flex gap-1 justify-center mb-1.5">
-                        {bettercallsaulTheme.levels.slice(1).map((c, i) => (
+                        {bettercallsaulTheme.levels?.slice(1).map((c, i) => (
                           <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
                         ))}
                       </div>
