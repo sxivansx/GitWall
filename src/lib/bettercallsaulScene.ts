@@ -49,32 +49,32 @@ export function renderBetterCallSaulScene(ctx: CanvasRenderingContext2D, a: Bett
 
   // Top Banner "IN LEGAL TROUBLE?"
   ctx.save();
-  ctx.translate(width / 2, height * 0.12);
+  ctx.translate(width / 2, height * 0.05);
   ctx.rotate(-5 * Math.PI / 180);
   ctx.fillStyle = TEXT_BLACK;
-  ctx.fillRect(-150 * scale, -25 * scale, 300 * scale, 50 * scale);
+  ctx.fillRect(-150 * scale, -20 * scale, 300 * scale, 40 * scale);
   ctx.fillStyle = BG_YELLOW;
-  ctx.font = `bold ${Math.round(22 * scale)}px Inter`;
+  ctx.font = `bold ${Math.round(20 * scale)}px Inter`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("IN LEGAL TROUBLE?", 0, 0);
   ctx.restore();
 
-  // "Better call Saul!" text
-  ctx.save();
-  ctx.translate(width / 2, height * 0.22);
-  ctx.rotate(-10 * Math.PI / 180);
-  ctx.fillStyle = TEXT_RED;
-  // Use the downloaded Damion font
-  ctx.font = `${Math.round(72 * scale)}px "Damion"`;
-  ctx.textAlign = "center";
-  ctx.shadowColor = "rgba(0,0,0,0.3)";
-  ctx.shadowBlur = 4 * scale;
-  ctx.shadowOffsetX = 2 * scale;
-  ctx.shadowOffsetY = 2 * scale;
-  ctx.fillText("Better", 0, -20 * scale);
-  ctx.fillText("call Saul!", 20 * scale, 40 * scale);
-  ctx.restore();
+  // Top Text Graphic (from user uploaded image)
+  try {
+    const textBuf = fs.readFileSync(path.join(process.cwd(), "public", "bcs_text.png"));
+    const textImg = new Image();
+    textImg.src = textBuf;
+    ctx.save();
+    const tw = 280 * scale; // perfect size for the cleanly cropped logo
+    const th = tw * (textImg.height / textImg.width);
+    ctx.drawImage(textImg, width / 2 - tw / 2, height * 0.11, tw, th);
+    ctx.restore();
+  } catch (e) {
+    console.error("Missing bcs_text.png", e);
+  }
+
+  // Text removed as per user request
 
   // Saul Goodman silhouette (from user upload)
   try {
@@ -83,10 +83,10 @@ export function renderBetterCallSaulScene(ctx: CanvasRenderingContext2D, a: Bett
     saulImg.src = saulBuf;
     ctx.save();
     ctx.globalAlpha = 0.12; // very very low transparency
-    // Draw centered beneath the grid
-    const imgW = 350 * scale;
+    // Draw centered beneath the grid, scaled down slightly
+    const imgW = 300 * scale;
     const imgH = imgW * (saulImg.height / saulImg.width);
-    ctx.drawImage(saulImg, width / 2 - imgW / 2, height * 0.40, imgW, imgH);
+    ctx.drawImage(saulImg, width / 2 - imgW / 2, height * 0.45, imgW, imgH);
     ctx.restore();
   } catch (e) {
     console.error("Missing saul2.png", e);
