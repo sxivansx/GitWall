@@ -15,7 +15,7 @@ export interface Theme {
   // When set, cells are drawn as pixel-art icons instead of plain boxes/circles,
   // or (attackontitan/gameofthrones) the whole calendar is rendered as one scene.
   // `empty`/`levels` only feed the theme-picker swatch in these modes.
-  style?: "minecraft" | "onepiece" | "attackontitan" | "gameofthrones" | "pokemon" | "pointblank" | "spiderman";
+  style?: "minecraft" | "onepiece" | "attackontitan" | "gameofthrones" | "pokemon" | "pointblank" | "spiderman" | "breakingbad" | "bettercallsaul";
   variant?: MinecraftVariant | OnePieceVariant | AttackOnTitanVariant | GameOfThronesVariant | PokemonVariant | SpidermanVariant;
 }
 
@@ -361,6 +361,32 @@ export const THEMES: Record<string, Theme> = {
     levels: ["#0f380f", "#306230", "#73a92f", "#9bbc0c"],
     text: "#dcffe9",
     subtext: "#a6e6c0",
+  },
+
+  // ── Breaking Bad ──────────────────────────────────────────────────────────
+  // The whole calendar renders as one scene (see src/lib/breakingbadScene.ts):
+  // a dark grungy lab with cash stacks and chemistry grid.
+  "breakingbad": {
+    name: "Breaking Bad",
+    style: "breakingbad",
+    background: "#0c140a", // dark lab green
+    empty: "#162615",
+    levels: ["#e8d245", "#d9782b", "#3e8c3b", "#279cd1"], // yellow, orange, green, blue chemistry liquids
+    text: "#ffffff",
+    subtext: "#8b9c8b",
+  },
+
+  // ── Better Call Saul ──────────────────────────────────────────────────────
+  // The whole calendar renders as one scene (see src/lib/bettercallsaulScene.ts):
+  // a vibrant yellow billboard with red/black accents.
+  "bettercallsaul": {
+    name: "Better Call Saul",
+    style: "bettercallsaul",
+    background: "#ffcc00", // vibrant lawyer yellow
+    empty: "#e6b800",
+    levels: ["#d9534f", "#c9302c", "#9c201c", "#111111"], // red to black
+    text: "#111111",
+    subtext: "#333333",
   },
 };
 

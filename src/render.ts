@@ -15,6 +15,8 @@ import { type SpidermanVariant } from "./lib/spiderman";
 import { renderPbScene } from "./lib/pbScene";
 import { renderPokemonScene } from "./lib/pokemonScene";
 import { type PokemonVariant } from "./lib/pokemon";
+import { renderBreakingBadScene } from "./lib/breakingbadScene";
+import { renderBetterCallSaulScene } from "./lib/bettercallsaulScene";
 import type { ContributionCalendar } from "./github";
 
 const fontsDir = path.join(process.cwd(), "fonts");
@@ -29,6 +31,8 @@ registerFont(path.join(fontsDir, "Cinzel.ttf"), { family: "Cinzel" });
 // JetBrains Mono: the terminal typeface for the Point Blank theme's shell prompt.
 registerFont(path.join(fontsDir, "JetBrainsMono-Regular.ttf"), { family: "JetBrains Mono" });
 registerFont(path.join(fontsDir, "JetBrainsMono-Bold.ttf"), { family: "JetBrains Mono", weight: "bold" });
+// Caveat Brush: alternative brush script for Better Call Saul
+registerFont(path.join(fontsDir, "CaveatBrush-Regular.ttf"), { family: "Caveat Brush" });
 
 // The product's own domain, baked into every wallpaper as a watermark.
 export const WATERMARK = "gitwall.space";
@@ -127,6 +131,8 @@ export function renderWallpaper(
   const isSpiderman = theme.style === "spiderman";
   const isPointBlank = theme.style === "pointblank";
   const isPokemon = theme.style === "pokemon";
+  const isBreakingBad = theme.style === "breakingbad";
+  const isBetterCallSaul = theme.style === "bettercallsaul";
 
   if (isAttackOnTitan) {
     // Attack on Titan takes over the whole canvas: the grid becomes the Wall
@@ -160,6 +166,18 @@ export function renderWallpaper(
     renderPokemonScene(ctx, {
       width, height, gridLeft, gridTop, numCols, numRows, cellSize, cellStep,
       cornerRadius, levels, variant: theme.variant as PokemonVariant,
+    });
+  } else if (isBreakingBad) {
+    const levels = recentDays.map((d) => getContributionLevel(d.contributionCount));
+    renderBreakingBadScene(ctx, {
+      width, height, gridLeft, gridTop, numCols, numRows, cellSize, cellStep,
+      cornerRadius, levels,
+    });
+  } else if (isBetterCallSaul) {
+    const levels = recentDays.map((d) => getContributionLevel(d.contributionCount));
+    renderBetterCallSaulScene(ctx, {
+      width, height, gridLeft, gridTop, numCols, numRows, cellSize, cellStep,
+      cornerRadius, levels,
     });
   } else {
     const isMinecraft = theme.style === "minecraft";
