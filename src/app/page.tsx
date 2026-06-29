@@ -18,12 +18,16 @@ const GOT_DEFAULT = "got-targaryen";
 const SPIDERMAN_DEFAULT = "spiderman-classic";
 const POINTBLANK_ID = "pointblank";
 const POKEMON_DEFAULT = "pokemon-pikachu";
+const BREAKINGBAD_ID = "breakingbad";
+const BETTERCALLSAUL_ID = "bettercallsaul";
 const isMinecraftId = (id: string) => id.startsWith("minecraft-");
 const isOnePieceId = (id: string) => id.startsWith("onepiece-");
 const isAotId = (id: string) => id.startsWith("aot-");
 const isGotId = (id: string) => id.startsWith("got-");
 const isSpidermanId = (id: string) => id.startsWith("spiderman-");
 const isPointBlankId = (id: string) => id === POINTBLANK_ID;
+const isBreakingBadId = (id: string) => id === BREAKINGBAD_ID;
+const isBetterCallSaulId = (id: string) => id === BETTERCALLSAUL_ID;
 const isPokemonId = (id: string) => id.startsWith("pokemon-");
 
 type Theme = { id: string; name: string; colors: string[]; background: string };
@@ -367,7 +371,7 @@ export default function Home() {
   // single picker tiles that expand to show their variants; everything else stays
   // in the flat theme grid.
   const gridThemes = themes.filter(
-    (t) => !isMinecraftId(t.id) && !isOnePieceId(t.id) && !isAotId(t.id) && !isGotId(t.id) && !isSpidermanId(t.id) && !isPointBlankId(t.id) && !isPokemonId(t.id)
+    (t) => !isMinecraftId(t.id) && !isOnePieceId(t.id) && !isAotId(t.id) && !isGotId(t.id) && !isSpidermanId(t.id) && !isPointBlankId(t.id) && !isPokemonId(t.id) && !isBreakingBadId(t.id) && !isBetterCallSaulId(t.id)
   );
   const minecraftThemes = themes.filter((t) => isMinecraftId(t.id));
   const onepieceThemes = themes.filter((t) => isOnePieceId(t.id));
@@ -386,6 +390,10 @@ export default function Home() {
   const spidermanSelected = isSpidermanId(selectedTheme);
   const spidermanGroup = spidermanThemes.find((t) => t.id === SPIDERMAN_DEFAULT) ?? spidermanThemes[0];
   const pointblankTheme = themes.find((t) => isPointBlankId(t.id));
+  const breakingbadSelected = isBreakingBadId(selectedTheme);
+  const bettercallsaulSelected = isBetterCallSaulId(selectedTheme);
+  const breakingbadTheme = themes.find((t) => isBreakingBadId(t.id));
+  const bettercallsaulTheme = themes.find((t) => isBetterCallSaulId(t.id));
   const pokemonThemes = themes.filter((t) => isPokemonId(t.id));
   const pokemonSelected = isPokemonId(selectedTheme);
   const pokemonGroup = pokemonThemes.find((t) => t.id === POKEMON_DEFAULT) ?? pokemonThemes[0];
@@ -859,6 +867,54 @@ export default function Home() {
                       </div>
                       <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
                         Point Blank
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Breaking Bad */}
+                  {breakingbadTheme && (
+                    <button
+                      onClick={() => setSelectedTheme(BREAKINGBAD_ID)}
+                      aria-pressed={breakingbadSelected}
+                      aria-label="Breaking Bad theme"
+                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
+                        breakingbadSelected
+                          ? "border-white/50 ring-1 ring-white/10"
+                          : "border-white/[0.07] hover:border-white/20"
+                      }`}
+                      style={{ background: breakingbadTheme.background }}
+                    >
+                      <div className="flex gap-1 justify-center mb-1.5">
+                        {breakingbadTheme.levels.slice(1).map((c, i) => (
+                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60" style={{ color: breakingbadTheme.text }}>
+                        Breaking Bad
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Better Call Saul */}
+                  {bettercallsaulTheme && (
+                    <button
+                      onClick={() => setSelectedTheme(BETTERCALLSAUL_ID)}
+                      aria-pressed={bettercallsaulSelected}
+                      aria-label="Better Call Saul theme"
+                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
+                        bettercallsaulSelected
+                          ? "border-white/50 ring-1 ring-white/10"
+                          : "border-white/[0.07] hover:border-white/20"
+                      }`}
+                      style={{ background: bettercallsaulTheme.background }}
+                    >
+                      <div className="flex gap-1 justify-center mb-1.5">
+                        {bettercallsaulTheme.levels.slice(1).map((c, i) => (
+                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60" style={{ color: bettercallsaulTheme.text }}>
+                        Better Call Saul
                       </span>
                     </button>
                   )}
