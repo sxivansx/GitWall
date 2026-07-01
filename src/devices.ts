@@ -97,6 +97,7 @@ export const ANDROID_DEVICES: AndroidDevice[] = [
   { id: "redmi-note-13", name: "Redmi Note 13", brand: "Xiaomi", width: 1080, height: 2400 },
   // ── Nothing ──────────────────────────────────────────────────────────
   { id: "nothing-phone-3", name: "Nothing Phone (3)", brand: "Nothing", width: 1260, height: 2800 },
+  { id: "nothing-phone-3a", name: "Nothing Phone (3a)", brand: "Nothing", width: 1260, height: 2392 },
   { id: "nothing-phone-2a-plus", name: "Nothing Phone (2a) Plus", brand: "Nothing", width: 1080, height: 2412 },
   { id: "nothing-phone-2a", name: "Nothing Phone (2a)", brand: "Nothing", width: 1080, height: 2412 },
   { id: "nothing-phone-2", name: "Nothing Phone (2)", brand: "Nothing", width: 1080, height: 2412 },
