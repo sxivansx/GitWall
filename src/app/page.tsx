@@ -10,6 +10,7 @@ import { AOT_THUMBS } from "@/lib/aotThumbs";
 import { GOT_THUMBS } from "@/lib/gotThumbs";
 import { SPIDERMAN_THUMBS } from "@/lib/spidermanThumbs";
 import { POKEMON_THUMBS } from "@/lib/pokemonThumbs";
+import { IRONMAN_THUMBS } from "@/lib/ironmanThumbs";
 
 const MINECRAFT_DEFAULT = "minecraft-slime";
 const ONEPIECE_DEFAULT = "onepiece-jollyroger";
@@ -20,6 +21,7 @@ const POINTBLANK_ID = "pointblank";
 const POKEMON_DEFAULT = "pokemon-pikachu";
 const BREAKINGBAD_ID = "breakingbad";
 const BETTERCALLSAUL_ID = "bettercallsaul";
+const IRONMAN_DEFAULT = "ironman-mk3";
 const isMinecraftId = (id: string) => id.startsWith("minecraft-");
 const isOnePieceId = (id: string) => id.startsWith("onepiece-");
 const isAotId = (id: string) => id.startsWith("aot-");
@@ -29,6 +31,7 @@ const isPointBlankId = (id: string) => id === POINTBLANK_ID;
 const isBreakingBadId = (id: string) => id === BREAKINGBAD_ID;
 const isBetterCallSaulId = (id: string) => id === BETTERCALLSAUL_ID;
 const isPokemonId = (id: string) => id.startsWith("pokemon-");
+const isIronmanId = (id: string) => id.startsWith("ironman-");
 
 type Theme = { id: string; name: string; colors: string[]; background: string; levels?: string[]; text?: string; };
 type Device = { id: string; name: string };
@@ -371,7 +374,7 @@ export default function Home() {
   // single picker tiles that expand to show their variants; everything else stays
   // in the flat theme grid.
   const gridThemes = themes.filter(
-    (t) => !isMinecraftId(t.id) && !isOnePieceId(t.id) && !isAotId(t.id) && !isGotId(t.id) && !isSpidermanId(t.id) && !isPointBlankId(t.id) && !isPokemonId(t.id) && !isBreakingBadId(t.id) && !isBetterCallSaulId(t.id)
+    (t) => !isMinecraftId(t.id) && !isOnePieceId(t.id) && !isAotId(t.id) && !isGotId(t.id) && !isSpidermanId(t.id) && !isPointBlankId(t.id) && !isPokemonId(t.id) && !isBreakingBadId(t.id) && !isBetterCallSaulId(t.id) && !isIronmanId(t.id)
   );
   const minecraftThemes = themes.filter((t) => isMinecraftId(t.id));
   const onepieceThemes = themes.filter((t) => isOnePieceId(t.id));
@@ -397,6 +400,9 @@ export default function Home() {
   const pokemonThemes = themes.filter((t) => isPokemonId(t.id));
   const pokemonSelected = isPokemonId(selectedTheme);
   const pokemonGroup = pokemonThemes.find((t) => t.id === POKEMON_DEFAULT) ?? pokemonThemes[0];
+  const ironmanThemes = themes.filter((t) => isIronmanId(t.id));
+  const ironmanSelected = isIronmanId(selectedTheme);
+  const ironmanGroup = ironmanThemes.find((t) => t.id === IRONMAN_DEFAULT) ?? ironmanThemes[0];
 
 
   const iphoneGuide = (
@@ -695,7 +701,7 @@ export default function Home() {
 
                 {/* Shape lives with General — it only changes how these solid cells
                     are drawn (box vs circle); pixel-art/full-scene themes ignore it. */}
-                {!minecraftSelected && !onepieceSelected && !aotSelected && !gotSelected && !spidermanSelected && !pointblankSelected && !pokemonSelected && (
+                {!minecraftSelected && !onepieceSelected && !aotSelected && !gotSelected && !spidermanSelected && !pointblankSelected && !pokemonSelected && !ironmanSelected && (
                   <div className="mt-3 flex items-center gap-2.5">
                     <span className="text-[11px] font-medium text-white/30">Shape</span>
                     <div className="inline-flex gap-1 p-1 bg-white/[0.04] border border-white/[0.08] rounded-lg">
@@ -843,6 +849,30 @@ export default function Home() {
                       </div>
                       <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
                         Spider-Man
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Iron Man group */}
+                  {ironmanGroup && (
+                    <button
+                      onClick={() => { if (!ironmanSelected) setSelectedTheme(IRONMAN_DEFAULT); }}
+                      aria-pressed={ironmanSelected}
+                      aria-label="Iron Man themes"
+                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
+                        ironmanSelected
+                          ? "border-white/50 ring-1 ring-white/10"
+                          : "border-white/[0.07] hover:border-white/20"
+                      }`}
+                      style={{ background: ironmanGroup.background }}
+                    >
+                      <div className="flex gap-1 justify-center mb-1.5">
+                        {ironmanGroup.colors.map((c, i) => (
+                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
+                        Iron Man
                       </span>
                     </button>
                   )}
@@ -1136,6 +1166,47 @@ export default function Home() {
                               width={28}
                               height={28}
                               className="w-7 h-7 rounded-[3px]"
+                            />
+                            <span className={`text-[12px] font-semibold ${active ? "text-white" : "text-white/55"}`}>
+                              {t.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Iron Man armour marks */}
+                {ironmanSelected && ironmanThemes.length > 0 && (
+                  <div className="mt-3 p-3 rounded-xl border border-white/[0.07] bg-white/[0.02]">
+                    <p className="text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">
+                      Armor Mark
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {ironmanThemes.map((t) => {
+                        const variant = t.id.replace("ironman-", "");
+                        const active = selectedTheme === t.id;
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => setSelectedTheme(t.id)}
+                            aria-pressed={active}
+                            aria-label={`${t.name} armor`}
+                            className={`flex items-center gap-2.5 pl-1.5 pr-3.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                              active
+                                ? "border-white/50 ring-1 ring-white/10 bg-white/[0.04]"
+                                : "border-white/[0.07] hover:border-white/20"
+                            }`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={IRONMAN_THUMBS[variant]}
+                              alt=""
+                              width={28}
+                              height={28}
+                              className="w-7 h-7 rounded-[3px]"
+                              style={{ imageRendering: "pixelated" }}
                             />
                             <span className={`text-[12px] font-semibold ${active ? "text-white" : "text-white/55"}`}>
                               {t.name}

@@ -6,6 +6,8 @@ import { getContributionLevel, calculateStreak } from "./lib/contributions";
 import { drawMinecraftCell } from "./lib/minecraft";
 import { drawOnePieceCell } from "./lib/onepiece";
 import type { OnePieceVariant } from "./lib/onepiece";
+import { drawIronmanCell } from "./lib/ironman";
+import type { IronmanVariant } from "./lib/ironman";
 import type { AttackOnTitanVariant } from "./lib/attackontitan";
 import { renderAotScene } from "./lib/aotScene";
 import { renderGotScene } from "./lib/gotScene";
@@ -182,7 +184,8 @@ export function renderWallpaper(
   } else {
     const isMinecraft = theme.style === "minecraft";
     const isOnePiece = theme.style === "onepiece";
-    const isPixelArt = isMinecraft || isOnePiece;
+    const isIronman = theme.style === "ironman";
+    const isPixelArt = isMinecraft || isOnePiece || isIronman;
     if (isPixelArt) ctx.antialias = "none";
     for (let i = 0; i < recentDays.length; i++) {
       const col = i % numCols;
@@ -195,6 +198,8 @@ export function renderWallpaper(
         drawMinecraftCell(ctx, x, y, cellSize, level, theme.variant as import("./lib/minecraft").MinecraftVariant, seed);
       } else if (isOnePiece) {
         drawOnePieceCell(ctx, x, y, cellSize, level, theme.variant as OnePieceVariant, seed);
+      } else if (isIronman) {
+        drawIronmanCell(ctx, x, y, cellSize, level, theme.variant as IronmanVariant, seed);
       } else {
         ctx.fillStyle = level === -1 ? theme.empty : theme.levels[level];
         drawCell(ctx, x, y, cellSize, cornerRadius, shape);

@@ -1,5 +1,6 @@
 import type { MinecraftVariant } from "./lib/minecraft";
 import type { OnePieceVariant } from "./lib/onepiece";
+import type { IronmanVariant } from "./lib/ironman";
 import type { AttackOnTitanVariant } from "./lib/attackontitan";
 import type { GameOfThronesVariant } from "./lib/gameofthrones";
 import type { SpidermanVariant } from "./lib/spiderman";
@@ -15,8 +16,8 @@ export interface Theme {
   // When set, cells are drawn as pixel-art icons instead of plain boxes/circles,
   // or (attackontitan/gameofthrones) the whole calendar is rendered as one scene.
   // `empty`/`levels` only feed the theme-picker swatch in these modes.
-  style?: "minecraft" | "onepiece" | "attackontitan" | "gameofthrones" | "pokemon" | "pointblank" | "spiderman" | "breakingbad" | "bettercallsaul";
-  variant?: MinecraftVariant | OnePieceVariant | AttackOnTitanVariant | GameOfThronesVariant | PokemonVariant | SpidermanVariant;
+  style?: "minecraft" | "onepiece" | "attackontitan" | "gameofthrones" | "pokemon" | "pointblank" | "spiderman" | "breakingbad" | "bettercallsaul" | "ironman";
+  variant?: MinecraftVariant | OnePieceVariant | AttackOnTitanVariant | GameOfThronesVariant | PokemonVariant | SpidermanVariant | IronmanVariant;
 }
 
 export const THEMES: Record<string, Theme> = {
@@ -361,6 +362,73 @@ export const THEMES: Record<string, Theme> = {
     levels: ["#0f380f", "#306230", "#73a92f", "#9bbc0c"],
     text: "#dcffe9",
     subtext: "#a6e6c0",
+  },
+
+  // ── Iron Man styles ───────────────────────────────────────────────────────
+  // Cells render as pixel-art Iron Man helmets (see src/lib/ironman.ts): the
+  // armour brightens and the eyes power up with the day's activity. Each entry
+  // is a different mark; Mixed upgrades the mark with the level itself (Mk I on
+  // quiet days up to Mk LXXXV on the busiest). `empty`/`levels` only feed the
+  // theme-picker swatch.
+  "ironman-mk3": {
+    name: "Mark III",
+    style: "ironman",
+    variant: "mk3",
+    background: "#120a08",
+    empty: "#14171b",
+    levels: ["#871a14", "#b62518", "#cf9c28", "#f2c136"],
+    text: "#f8ead8",
+    subtext: "#b08a74",
+  },
+  "ironman-mk1": {
+    name: "Mark I",
+    style: "ironman",
+    variant: "mk1",
+    background: "#101214",
+    empty: "#14171b",
+    levels: ["#4e5358", "#61676d", "#7a8188", "#9aa2aa"],
+    text: "#e8ecef",
+    subtext: "#8a9097",
+  },
+  "ironman-mk2": {
+    name: "Mark II",
+    style: "ironman",
+    variant: "mk2",
+    background: "#0e1216",
+    empty: "#14171b",
+    levels: ["#6b747d", "#87919b", "#a8b4be", "#d2dce4"],
+    text: "#ecf2f6",
+    subtext: "#8c9aa4",
+  },
+  "ironman-mk42": {
+    name: "Mark XLII",
+    style: "ironman",
+    variant: "mk42",
+    background: "#120e04",
+    empty: "#14171b",
+    levels: ["#97731c", "#c29726", "#e9bd34", "#e83a28"],
+    text: "#f8f0d8",
+    subtext: "#b09a64",
+  },
+  "ironman-mk85": {
+    name: "Mark LXXXV",
+    style: "ironman",
+    variant: "mk85",
+    background: "#0e060a",
+    empty: "#14171b",
+    levels: ["#701527", "#9c1c30", "#cc283c", "#f8cc38"],
+    text: "#f8e0d8",
+    subtext: "#b0788a",
+  },
+  "ironman-mixed": {
+    name: "Hall of Armor",
+    style: "ironman",
+    variant: "mixed",
+    background: "#0d1016",
+    empty: "#14171b",
+    levels: ["#7a8188", "#a8b4be", "#e63a22", "#f8cc38"],
+    text: "#f0f0f4",
+    subtext: "#909aa4",
   },
 
   // ── Breaking Bad ──────────────────────────────────────────────────────────
