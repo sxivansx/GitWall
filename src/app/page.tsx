@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
-import { Download, Loader2, Smartphone, Square, Circle, Search, X, Copy, Check } from "lucide-react";
+import { Loader2, Smartphone, Square, Circle, Search, X, Copy, Check } from "lucide-react";
 import { DEVICES, ANDROID_DEVICES, type AndroidDevice } from "@/devices";
 import { THEMES } from "@/themes";
 import { MINECRAFT_THUMBS } from "@/lib/minecraftThumbs";
@@ -339,15 +339,6 @@ export default function Home() {
       setTimeout(() => setCopied(false), 2000);
     }
   }, [wallpaperUrl]);
-
-  const handleDownload = useCallback(() => {
-    if (wallpaperUrl) {
-      const a = document.createElement("a");
-      a.href = wallpaperUrl;
-      a.download = `gitwall-${username.trim()}.png`;
-      a.click();
-    }
-  }, [wallpaperUrl, username]);
 
   const currentKey = settingsKey({
     user: username.trim(),
@@ -1331,16 +1322,7 @@ export default function Home() {
                 Export & Automate
               </p>
 
-              <button
-                onClick={handleDownload}
-                disabled={!wallpaperUrl}
-                className="w-full py-3.5 bg-white/[0.06] border border-white/[0.08] text-white text-[13px] font-semibold rounded-lg hover:bg-white/[0.1] transition-colors disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <Download className="size-3.5" />
-                Download PNG
-              </button>
-
-              <div className="mt-7">
+              <div>
                 <p className="text-[13px] font-semibold text-white/70 mb-4">
                   {platform === "android"
                     ? "Auto-update daily with MacroDroid"
@@ -1428,6 +1410,15 @@ export default function Home() {
               className="text-white/35 hover:text-white/60 transition-colors underline underline-offset-2"
             >
               GitHub
+            </a>
+          </p>
+          <p className="text-[12px] font-medium text-white/20 mt-2">
+            Made by{" "}
+            <a
+              href="https://www.shivansh.life"
+              className="text-white/35 hover:text-white/60 transition-colors underline underline-offset-2"
+            >
+              Shivansh
             </a>
           </p>
         </footer>
