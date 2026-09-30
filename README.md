@@ -11,7 +11,7 @@ Turn your GitHub contribution graph into a phone wallpaper.
 - **Android** support: 70+ devices across Samsung, Google Pixel, OnePlus, Xiaomi, Nothing, Motorola, Sony, ASUS, OPPO, vivo, Realme, and Honor
 - Shows contribution stats: total count and current streak
 - iOS Shortcut-compatible URL for daily auto-updating wallpapers (iPhone)
-- MacroDroid-compatible URL for daily auto-updating wallpapers (Android)
+- GitWall Android app (`android/`) that sets the lock screen from the same URL and refreshes daily
 - In-memory caching with 5-minute TTL
 
 ## Setup
@@ -45,14 +45,15 @@ npm run build
 npm start
 ```
 
-Open `http://localhost:3000`, enter a GitHub username, pick your platform (iPhone or Android), choose a theme and device, and download your wallpaper.
+Open `http://localhost:3000`, enter a GitHub username, pick your platform (iPhone or Android), choose a theme, and download your wallpaper.
 
 ### API Endpoints
 
 | Endpoint | Description |
 |---|---|
 | `GET /api/wallpaper?user=<username>` | Full-resolution wallpaper PNG (iPhone) |
-| `GET /api/wallpaper?user=<username>&width=1440&height=3120` | Full-resolution wallpaper PNG (Android) |
+| `GET /api/wallpaper?user=<username>&width=1080&height=2340` | Wallpaper PNG at an exact size (used by the Android app) |
+| `GET /download/android` | Redirects to the Android APK (`/gitwall.apk`) |
 | `GET /api/preview?user=<username>` | Low-res preview PNG |
 | `GET /api/themes` | List available themes |
 | `GET /api/devices` | List supported iPhone devices |
@@ -71,15 +72,25 @@ The API returns proper status codes: `400` for a missing or malformed username, 
 4. Add **Set Wallpaper** using the result
 5. Automate it: Automation → Time of Day → run daily
 
-**Android (MacroDroid)**
-1. Generate your wallpaper, select your phone model, and copy the MacroDroid URL
-2. Install [MacroDroid](https://play.google.com/store/apps/details?id=com.arlosoft.macrodroid) from Google Play
-3. Add Macro → Trigger: Date/Time → Daily at 00:01
-4. Action 1: HTTP Request (GET) → save response to `/Download/gitwall.png`
-5. Action 2: Device Settings → Set Wallpaper → `/Download/gitwall.png`
-6. Name the macro and tap **Create Macro**
+**Android (GitWall app)**
+1. Generate your wallpaper and copy the URL (no phone model needed)
+2. Install the GitWall app from the website's **Download APK** button (`/download/android`)
+3. Tap **Open in GitWall app**, or paste the URL into the app
+4. Tap **Set lock screen wallpaper**. The app appends your phone's real resolution, sets the lock screen directly through Android's wallpaper API, and refreshes daily at a time you pick (06:00 by default)
 
-> Use the **exact same filename** in both actions.
+Task-automation apps such as MacroDroid cannot do this reliably: Android copies wallpapers into private system storage, so replacing a file on disk never changes the lock screen, and newer Android versions block writes to shared folders.
+
+### Android app
+
+The app lives in `android/` (Kotlin, Jetpack Compose, WorkManager, minSdk 26).
+
+```bash
+cd android
+./gradlew assembleDebug        # android/app/build/outputs/apk/debug/app-debug.apk (allows plain http for local testing)
+./gradlew assembleRelease      # signed when android/keystore.properties exists
+```
+
+The signed release APK is committed as `public/gitwall.apk` and served by the website at `/gitwall.apk`. To ship a new version, bump `versionCode` and `versionName` in `android/app/build.gradle.kts`, rebuild with the same keystore, and replace that file. `keystore.properties` (git-ignored) holds `storeFile`, `storePassword`, `keyAlias`, `keyPassword`; the keystore must stay the same across releases or existing installs cannot update. Set `ANDROID_APK_URL` to point `/download/android` elsewhere when self-hosting.
 
 ## Tech Stack
 

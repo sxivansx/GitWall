@@ -8,3 +8,13 @@ node_modules/
 out/
 .claude/
 .gstack/
+
+# Android app
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/keystore.properties
+android/*.jks
+android/*.keystore
+tsconfig.tsbuildinfo

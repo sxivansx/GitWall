@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
-import { Download, Loader2, Smartphone, Square, Circle, Search, X, Copy, Check } from "lucide-react";
-import { DEVICES, ANDROID_DEVICES, type AndroidDevice } from "@/devices";
+import { Download, Loader2, Smartphone, Square, Circle, Copy, Check, ExternalLink } from "lucide-react";
+import { DEVICES } from "@/devices";
 import { THEMES } from "@/themes";
 import { MINECRAFT_THUMBS } from "@/lib/minecraftThumbs";
 import { ONEPIECE_THUMBS } from "@/lib/onepieceThumbs";
@@ -35,6 +35,18 @@ const isIronmanId = (id: string) => id.startsWith("ironman-");
 
 type Theme = { id: string; name: string; colors: string[]; background: string; levels?: string[]; text?: string; };
 type Device = { id: string; name: string };
+type ScreenSize = { width: number; height: number };
+
+// The Android app is served from the website; /download/android redirects to
+// the latest APK so this link never changes when a new build is released.
+const ANDROID_APP_PATH = "/download/android";
+const ANDROID_APP_PACKAGE = "space.gitwall.app";
+
+// Chrome and other Android browsers open the app through an intent: URL when
+// it is installed, and fall back to the APK download when it is not.
+function androidAppLink(wallpaperUrl: string, fallbackUrl: string): string {
+  return `intent://setup?url=${encodeURIComponent(wallpaperUrl)}#Intent;scheme=gitwall;package=${ANDROID_APP_PACKAGE};S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end`;
+}
 
 // First-paint fallbacks derived from the same source-of-truth modules the API
 // serves, so there is no second hand-maintained copy to drift. The live lists
@@ -142,12 +154,9 @@ export default function Home() {
   const [selectedTheme, setSelectedTheme] = useState("classic");
   // iPhone device state
   const [iphoneDevice, setIphoneDevice] = useState("iphone17");
-  // Android device state
-  const [androidDevice, setAndroidDevice] = useState<AndroidDevice | null>(null);
-  const [androidSearch, setAndroidSearch] = useState("");
-  const [showAndroidDropdown, setShowAndroidDropdown] = useState(false);
-  const androidSearchRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  // Physical screen size of the visiting Android phone, used only for the
+  // Download PNG link. The app measures the real size itself.
+  const [androidScreen, setAndroidScreen] = useState<ScreenSize | null>(null);
 
   const [showStats, setShowStats] = useState("true");
   const [shape, setShape] = useState("box");
@@ -160,7 +169,6 @@ export default function Home() {
   const [autoDetected, setAutoDetected] = useState(false);
   const [themes, setThemes] = useState<Theme[]>(FALLBACK_THEMES);
   const [devices, setDevices] = useState<Device[]>(FALLBACK_DEVICES);
-  const [androidDevices, setAndroidDevices] = useState<AndroidDevice[]>(ANDROID_DEVICES);
   // Monotonic id so an out-of-order preview fetch can't overwrite a newer one.
   const reqIdRef = useRef(0);
 
@@ -169,13 +177,11 @@ export default function Home() {
     Promise.all([
       fetch("/api/themes").then((r) => r.json()),
       fetch("/api/devices").then((r) => r.json()),
-      fetch("/api/android-devices").then((r) => r.json()),
     ])
-      .then(([t, d, a]: [Theme[], Device[], AndroidDevice[]]) => {
+      .then(([t, d]: [Theme[], Device[]]) => {
         if (!active) return;
         if (Array.isArray(t) && t.length) setThemes(t);
         if (Array.isArray(d) && d.length) setDevices(d);
-        if (Array.isArray(a) && a.length) setAndroidDevices(a);
       })
       .catch(() => {
         /* keep fallbacks if the API is unreachable */
@@ -190,16 +196,11 @@ export default function Home() {
     const ua = navigator.userAgent;
     if (/Android/.test(ua)) {
       setPlatform("android");
-      const w = Math.min(screen.width, screen.height) * window.devicePixelRatio;
-      const h = Math.max(screen.width, screen.height) * window.devicePixelRatio;
-      const match = ANDROID_DEVICES.find(
-        (d) => Math.abs(d.width - w) < 40 && Math.abs(d.height - h) < 80
-      );
-      if (match) {
-        setAndroidDevice(match);
-        setAndroidSearch(match.name);
-        setAutoDetected(true);
-      }
+      const dpr = window.devicePixelRatio || 1;
+      setAndroidScreen({
+        width: Math.round(Math.min(screen.width, screen.height) * dpr),
+        height: Math.round(Math.max(screen.width, screen.height) * dpr),
+      });
     } else if (/iPhone/.test(ua)) {
       setPlatform("iphone");
       const w = Math.min(screen.width, screen.height);
@@ -220,18 +221,15 @@ export default function Home() {
     }
   }, []);
 
-  // Close android dropdown on outside click
+  // Release the last preview blob when the page unmounts.
+  const previewSrcRef = useRef<string | null>(null);
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setShowAndroidDropdown(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    previewSrcRef.current = previewSrc;
+  }, [previewSrc]);
+  useEffect(() => {
+    return () => {
+      if (previewSrcRef.current) URL.revokeObjectURL(previewSrcRef.current);
+    };
   }, []);
 
   // Restore the last username on load and persist it across refreshes.
@@ -247,21 +245,10 @@ export default function Home() {
     }
   }, [username]);
 
-  const filteredAndroid = androidSearch
-    ? androidDevices.filter((d) =>
-        d.name.toLowerCase().includes(androidSearch.toLowerCase()) ||
-        d.brand.toLowerCase().includes(androidSearch.toLowerCase())
-      )
-    : androidDevices;
-
   const generate = useCallback(async () => {
     const user = username.trim();
     if (!user) {
       setError("Please enter a GitHub username.");
-      return;
-    }
-    if (platform === "android" && !androidDevice) {
-      setError("Please select your Android phone model.");
       return;
     }
     setError(null);
@@ -274,27 +261,17 @@ export default function Home() {
       stats: showStats,
       shape,
       platform,
-      device: platform === "android" ? androidDevice?.id : iphoneDevice,
+      device: platform === "android" ? undefined : iphoneDevice,
     });
 
     const previewParams = new URLSearchParams({ user, theme: selectedTheme, stats: showStats, shape });
     const previewUrl = `/api/preview?${previewParams}`;
 
-    let fullUrl: string;
-    if (platform === "android" && androidDevice) {
-      const params = new URLSearchParams({
-        user,
-        theme: selectedTheme,
-        stats: showStats,
-        shape,
-        width: String(androidDevice.width),
-        height: String(androidDevice.height),
-      });
-      fullUrl = `${window.location.origin}/api/wallpaper?${params}`;
-    } else {
-      const params = new URLSearchParams({ user, theme: selectedTheme, stats: showStats, shape, device: iphoneDevice });
-      fullUrl = `${window.location.origin}/api/wallpaper?${params}`;
-    }
+    // The Android URL carries no size on purpose: the GitWall app appends the
+    // phone's real resolution, so one URL works on any Android device.
+    const params = new URLSearchParams({ user, theme: selectedTheme, stats: showStats, shape });
+    if (platform === "iphone") params.set("device", iphoneDevice);
+    const fullUrl = `${window.location.origin}/api/wallpaper?${params}`;
 
     try {
       const res = await fetch(previewUrl);
@@ -330,24 +307,41 @@ export default function Home() {
     } finally {
       if (reqIdRef.current === reqId) setLoading(false);
     }
-  }, [username, selectedTheme, iphoneDevice, androidDevice, platform, showStats, shape]);
+  }, [username, selectedTheme, iphoneDevice, platform, showStats, shape]);
 
-  const handleCopy = useCallback(() => {
-    if (wallpaperUrl) {
-      navigator.clipboard.writeText(wallpaperUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const handleCopy = useCallback(async () => {
+    if (!wallpaperUrl) return;
+    try {
+      await navigator.clipboard.writeText(wallpaperUrl);
+    } catch {
+      // Clipboard API needs a secure context; fall back to selecting the field.
+      const input = document.querySelector<HTMLInputElement>("input[readonly][value^='http']");
+      input?.select();
+      return;
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }, [wallpaperUrl]);
 
+  // Direct download for Android uses the browser-reported screen size so the
+  // PNG matches the phone even without the app.
+  const downloadUrl = (() => {
+    if (!wallpaperUrl) return null;
+    if (platform !== "android" || !androidScreen) return wallpaperUrl;
+    const u = new URL(wallpaperUrl);
+    u.searchParams.set("width", String(androidScreen.width));
+    u.searchParams.set("height", String(androidScreen.height));
+    return u.toString();
+  })();
+
   const handleDownload = useCallback(() => {
-    if (wallpaperUrl) {
+    if (downloadUrl) {
       const a = document.createElement("a");
-      a.href = wallpaperUrl;
+      a.href = downloadUrl;
       a.download = `gitwall-${username.trim()}.png`;
       a.click();
     }
-  }, [wallpaperUrl, username]);
+  }, [downloadUrl, username]);
 
   const currentKey = settingsKey({
     user: username.trim(),
@@ -355,7 +349,7 @@ export default function Home() {
     stats: showStats,
     shape,
     platform,
-    device: platform === "android" ? androidDevice?.id : iphoneDevice,
+    device: platform === "android" ? undefined : iphoneDevice,
   });
   const hasGenerated = generatedKey !== null;
   const isDirty = hasGenerated && currentKey !== generatedKey;
@@ -431,54 +425,47 @@ export default function Home() {
     </div>
   );
 
+  const androidAppDownload =
+    typeof window === "undefined" ? ANDROID_APP_PATH : `${window.location.origin}${ANDROID_APP_PATH}`;
+
   const androidGuide = (
     <div className="space-y-3">
       <StepCard num="1" title="Generate">
-        <p>Search your phone model, choose a theme above, then tap <b className="font-semibold text-white/75">Generate</b>.</p>
+        <p>Enter your GitHub username, choose a theme above, then tap <b className="font-semibold text-white/75">Generate</b>. No phone model needed: the app measures your screen.</p>
       </StepCard>
-      <StepCard num="2" title="Prerequisites">
-        <p>Install <b className="font-semibold text-white/75">MacroDroid</b> from the Google Play Store.</p>
-      </StepCard>
-      <StepCard num="3" title="Setup Macro">
-        <p>Open <b className="font-semibold text-white/75">MacroDroid</b> → <b className="font-semibold text-white/75">Add Macro</b>.</p>
-        <p><b className="font-semibold text-white/75">Trigger:</b> Date/Time → Day/Time → set time to <b className="font-semibold text-white/75">00:01</b> → activate <b className="font-semibold text-white/75">all weekdays</b>.</p>
-      </StepCard>
-      <StepCard num="4" title="Configure Actions">
-        <SubStep num="4.1">
-          <p className="text-white/70 font-medium">Download Image</p>
-          <ul className="list-disc pl-4 space-y-1 marker:text-white/20">
-            <li>Go to <b className="font-semibold text-white/75">Web Interactions</b> → <b className="font-semibold text-white/75">HTTP Request</b></li>
-            <li>Request method: <b className="font-semibold text-white/75">GET</b></li>
-            <li>Paste your wallpaper URL:</li>
-          </ul>
-          <UrlBox url={wallpaperUrl} copied={copied} onCopy={handleCopy} />
-          <ul className="list-disc pl-4 space-y-1 marker:text-white/20">
-            <li>Enable <b className="font-semibold text-white/75">Block next actions until complete</b></li>
-            <li>Tick <b className="font-semibold text-white/75">Save HTTP response to file</b></li>
-            <li>Folder &amp; filename: <span className="font-mono text-white/60">/Download/gitwall.png</span></li>
-          </ul>
-        </SubStep>
-        <SubStep num="4.2">
-          <p className="text-white/70 font-medium">Set Wallpaper</p>
-          <ul className="list-disc pl-4 space-y-1 marker:text-white/20">
-            <li>Go to <b className="font-semibold text-white/75">Device Settings</b> → <b className="font-semibold text-white/75">Set Wallpaper</b></li>
-            <li>Choose <b className="font-semibold text-white/75">Image and Screen</b></li>
-            <li>Folder &amp; filename: <span className="font-mono text-white/60">/Download/gitwall.png</span></li>
-          </ul>
-        </SubStep>
+      <StepCard num="2" title="Install the GitWall app">
+        <p>A small app that does one thing: fetches your wallpaper and sets it as the lock screen, then repeats every morning.</p>
+        <a
+          href={ANDROID_APP_PATH}
+          className="inline-flex items-center gap-2 mt-1 px-3.5 py-2 rounded-md border border-[#3ddc84]/30 bg-[#3ddc84]/[0.06] text-[#3ddc84] text-[12px] font-semibold hover:bg-[#3ddc84]/[0.12] transition-colors"
+        >
+          <Download className="size-3.5" />
+          Download APK
+        </a>
         <ImportantNote>
-          <b className="font-semibold text-amber-300/90">Important:</b> Use the <b className="font-semibold text-amber-200/90">exact same folder and filename</b> in both actions.
+          Android asks once to allow installs from your browser. On Samsung phones also turn off <b className="font-semibold text-amber-200/90">Auto Blocker</b> in Settings → Security and privacy, then turn it back on after installing.
         </ImportantNote>
       </StepCard>
-      <StepCard num="5" title="Finalize">
-        <p>Give the macro a name → tap <b className="font-semibold text-white/75">Create Macro</b>.</p>
+      <StepCard num="3" title="Send the URL to the app">
+        <p>Tap the button below on your phone. The app opens with the URL filled in. Or copy the URL and paste it into the app.</p>
+        {wallpaperUrl ? (
+          <a
+            href={androidAppLink(wallpaperUrl, androidAppDownload)}
+            className="inline-flex items-center gap-2 mt-1 px-3.5 py-2 rounded-md bg-white text-black text-[12px] font-bold hover:bg-white/90 transition-colors"
+          >
+            <ExternalLink className="size-3.5" />
+            Open in GitWall app
+          </a>
+        ) : (
+          <p className="text-white/30 text-[12px]">Complete step 1 to enable this button.</p>
+        )}
+        <UrlBox url={wallpaperUrl} copied={copied} onCopy={handleCopy} />
       </StepCard>
-      <StepCard num="?" title="Testing & Managing">
-        <ul className="list-disc pl-4 space-y-1 marker:text-white/20">
-          <li><b className="font-semibold text-white/75">Test:</b> MacroDroid → Macros → select your macro → More options → <b className="font-semibold text-white/75">Test macro</b></li>
-          <li><b className="font-semibold text-white/75">Stop:</b> toggle off or delete the macro</li>
-          <li><b className="font-semibold text-white/75">Edit URL:</b> tap the HTTP Request action → update the URL → Save</li>
-        </ul>
+      <StepCard num="4" title="Set it">
+        <p>In the app tap <b className="font-semibold text-white/75">Set lock screen wallpaper</b>. Your lock screen updates right away and refreshes every day at the time you choose in the app (6:00 by default).</p>
+        <ImportantNote>
+          If your phone has a rotating lock screen feature such as Samsung <b className="font-semibold text-amber-200/90">Dynamic Lock screen</b> or Xiaomi <b className="font-semibold text-amber-200/90">Wallpaper Carousel</b>, turn it off or it will replace GitWall.
+        </ImportantNote>
       </StepCard>
     </div>
   );
@@ -570,7 +557,7 @@ export default function Home() {
                 {/* Device selector */}
                 <div>
                   <label htmlFor="device-select" className="block text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-2.5">
-                    Device{autoDetected && <span className="text-white/25 normal-case tracking-normal font-normal ml-1.5">· auto-detected</span>}
+                    Device{autoDetected && platform === "iphone" && <span className="text-white/25 normal-case tracking-normal font-normal ml-1.5">· auto-detected</span>}
                   </label>
 
                   {platform === "iphone" ? (
@@ -590,54 +577,12 @@ export default function Home() {
                       <span className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-white/30 text-[10px]">▾</span>
                     </div>
                   ) : (
-                    /* Android searchable dropdown */
-                    <div className="relative" ref={dropdownRef}>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-white/25 pointer-events-none" />
-                        <input
-                          ref={androidSearchRef}
-                          value={androidSearch}
-                          onChange={(e) => {
-                            setAndroidSearch(e.target.value);
-                            setAndroidDevice(null);
-                            setShowAndroidDropdown(true);
-                          }}
-                          onFocus={() => setShowAndroidDropdown(true)}
-                          placeholder="Search phone model..."
-                          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg pl-8 pr-8 py-2.5 text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-white/25 transition-colors font-medium"
-                        />
-                        {androidSearch && (
-                          <button
-                            onClick={() => { setAndroidSearch(""); setAndroidDevice(null); setShowAndroidDropdown(true); androidSearchRef.current?.focus(); }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/50"
-                          >
-                            <X className="size-3.5" />
-                          </button>
-                        )}
-                      </div>
-                      {showAndroidDropdown && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-[#111] border border-white/[0.1] rounded-lg overflow-hidden z-50 max-h-56 overflow-y-auto shadow-2xl">
-                          {filteredAndroid.length === 0 ? (
-                            <div className="px-3.5 py-3 text-[12px] text-white/30">No devices found</div>
-                          ) : (
-                            filteredAndroid.map((d) => (
-                              <button
-                                key={d.id}
-                                onClick={() => {
-                                  setAndroidDevice(d);
-                                  setAndroidSearch(d.name);
-                                  setShowAndroidDropdown(false);
-                                  setAutoDetected(false);
-                                }}
-                                className="w-full text-left px-3.5 py-2.5 hover:bg-white/[0.06] transition-colors group"
-                              >
-                                <div className="text-[13px] font-medium text-white/80 group-hover:text-white leading-none mb-0.5">{d.name}</div>
-                                <div className="text-[10px] text-white/25">{d.width}×{d.height}px</div>
-                              </button>
-                            ))
-                          )}
-                        </div>
-                      )}
+                    /* Android: any phone. The app supplies the exact screen size. */
+                    <div className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-[13px] text-white/70 font-medium">
+                      Any Android phone
+                      <span className="block text-[10px] text-white/25 font-normal mt-0.5">
+                        {androidScreen ? `Detected ${androidScreen.width}×${androidScreen.height}px` : "Sized by the GitWall app"}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -1311,7 +1256,7 @@ export default function Home() {
                   {!loading && !previewSrc && (
                     <div className="flex flex-col items-center justify-center h-full gap-3 px-8">
                       <Smartphone className="size-7 text-white/10" />
-                      <p className="text-[11px] font-medium text-white/20 text-center leading-relaxed">{androidDevice ? `${androidDevice.name} selected` : "Search your Android model"}</p>
+                      <p className="text-[11px] font-medium text-white/20 text-center leading-relaxed">Enter your username and generate</p>
                     </div>
                   )}
                   {previewSrc && (
@@ -1343,7 +1288,7 @@ export default function Home() {
               <div className="mt-7">
                 <p className="text-[13px] font-semibold text-white/70 mb-4">
                   {platform === "android"
-                    ? "Auto-update daily with MacroDroid"
+                    ? "Auto-update daily with the GitWall app"
                     : "Auto-update daily with iOS Shortcuts"}
                 </p>
                 {platform === "iphone" ? iphoneGuide : androidGuide}
@@ -1401,7 +1346,7 @@ export default function Home() {
                       <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 1.23 12.95 1 12 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.97 3.26 6 5.01 6 7h12c0-1.99-.97-3.75-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/>
                     </svg>
                     <p className="text-[11px] font-medium text-white/20 text-center leading-relaxed">
-                      {androidDevice ? `${androidDevice.name} selected` : "Search your Android model"}
+                      Enter your username and generate
                     </p>
                   </div>
                 )}
