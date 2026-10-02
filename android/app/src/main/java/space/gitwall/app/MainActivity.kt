@@ -1,13 +1,18 @@
 package space.gitwall.app
 
 import android.app.TimePickerDialog
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings as AndroidSettings
 import android.text.format.DateFormat
 import android.text.format.DateUtils
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,9 +21,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,9 +50,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -56,7 +68,9 @@ private val Ink = Color(0xFF0A0A0A)
 private val Panel = Color(0xFF141414)
 private val Line = Color(0xFF2A2A2A)
 private val Muted = Color(0xFF8B8B8B)
+private val Dim = Color(0xFF555555)
 private val Danger = Color(0xFFF87171)
+private val Amber = Color(0xFFF5C451)
 
 class MainActivity : ComponentActivity() {
     private val incomingUrl = mutableStateOf<String?>(null)
@@ -83,6 +97,11 @@ class MainActivity : ComponentActivity() {
         extractWallpaperUrl(intent?.data, intent?.getStringExtra(Intent.EXTRA_TEXT))
 }
 
+private fun isBatteryUnrestricted(context: Context): Boolean {
+    val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+    return pm.isIgnoringBatteryOptimizations(context.packageName)
+}
+
 @Composable
 private fun Screen(incomingUrl: String?, onIncomingConsumed: () -> Unit) {
     val context = LocalContext.current
@@ -95,8 +114,23 @@ private fun Screen(incomingUrl: String?, onIncomingConsumed: () -> Unit) {
 
     var url by remember { mutableStateOf(settings.url) }
     var validation by remember { mutableStateOf<String?>(null) }
+    var batteryOk by remember { mutableStateOf(isBatteryUnrestricted(context)) }
     val clipboard = LocalClipboardManager.current
     val size = remember { screenSize(context) }
+
+    // Every time the screen comes back: re-check the battery setting (the user
+    // may have just changed it) and catch up if a refresh was missed.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                batteryOk = isBatteryUnrestricted(context)
+                Scheduler.ensureHealthy(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     // A URL handed over by the website replaces whatever is in the field.
     LaunchedEffect(incomingUrl) {
@@ -124,7 +158,6 @@ private fun Screen(incomingUrl: String?, onIncomingConsumed: () -> Unit) {
             context,
             { _, hour, minute ->
                 store.saveRefreshTime(hour, minute)
-                // Only re-anchor the schedule when a wallpaper is already set up.
                 if (settings.url.isNotBlank()) Scheduler.scheduleDaily(context, hour, minute)
             },
             settings.refreshHour,
@@ -133,10 +166,17 @@ private fun Screen(incomingUrl: String?, onIncomingConsumed: () -> Unit) {
         ).show()
     }
 
+    fun requestUnrestrictedBattery() {
+        val intent = Intent(AndroidSettings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}"))
+        runCatching { context.startActivity(intent) }
+            .onFailure { context.startActivity(Intent(AndroidSettings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
+    }
+
     Column(
         Modifier
             .fillMaxSize()
             .statusBarsPadding()
+            .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 32.dp),
     ) {
@@ -154,7 +194,7 @@ private fun Screen(incomingUrl: String?, onIncomingConsumed: () -> Unit) {
             value = url,
             onValueChange = { url = it; validation = null },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("https://gitwall.space/api/wallpaper?user=...", color = Color(0xFF555555)) },
+            placeholder = { Text("https://gitwall.space/api/wallpaper?user=...", color = Dim) },
             singleLine = false,
             minLines = 2,
             isError = validation != null,
@@ -189,12 +229,32 @@ private fun Screen(incomingUrl: String?, onIncomingConsumed: () -> Unit) {
             }
         }
 
+        if (!batteryOk) {
+            Spacer(Modifier.height(12.dp))
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF1A1709), RoundedCornerShape(10.dp))
+                    .padding(14.dp),
+            ) {
+                Text("Allow background refresh", color = Amber, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Android pauses this app's network while the phone sleeps, so the daily refresh may run hours late or not at all. Set battery use to Unrestricted to fix that.",
+                    color = Color(0xFFBFB08A), fontSize = 12.sp, lineHeight = 17.sp,
+                )
+                TextButton(onClick = ::requestUnrestrictedBattery, contentPadding = PaddingValues(0.dp)) {
+                    Text("Allow", color = Amber, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
         Spacer(Modifier.height(16.dp))
         Status(settings, size)
     }
 }
 
-private fun formatTime(context: android.content.Context, hour: Int, minute: Int): String {
+private fun formatTime(context: Context, hour: Int, minute: Int): String {
     val cal = Calendar.getInstance().apply {
         set(Calendar.HOUR_OF_DAY, hour)
         set(Calendar.MINUTE, minute)
@@ -202,19 +262,27 @@ private fun formatTime(context: android.content.Context, hour: Int, minute: Int)
     return DateFormat.getTimeFormat(context).format(cal.time)
 }
 
+private fun formatWhen(context: Context, at: Long): String =
+    DateUtils.formatDateTime(context, at, DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_ALL)
+
 @Composable
 private fun Status(settings: Settings, size: ScreenSize) {
     val context = LocalContext.current
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         when {
-            settings.lastError != null -> Text(settings.lastError, color = Danger, fontSize = 13.sp, lineHeight = 18.sp)
+            settings.lastError != null -> Text(
+                "Last attempt " + DateUtils.getRelativeTimeSpanString(settings.lastAttemptAt).toString().lowercase() + " failed: " + settings.lastError,
+                color = Danger, fontSize = 13.sp, lineHeight = 18.sp,
+            )
             settings.lastSuccessAt > 0L -> Text(
-                "Lock screen updated " + DateUtils.getRelativeTimeSpanString(settings.lastSuccessAt).toString().lowercase() +
-                    ". Next refresh around " + formatTime(context, settings.refreshHour, settings.refreshMinute) + ".",
+                "Lock screen updated " + DateUtils.getRelativeTimeSpanString(settings.lastSuccessAt).toString().lowercase() + ".",
                 color = Green, fontSize = 13.sp, lineHeight = 18.sp,
             )
             else -> Text("Not set yet.", color = Muted, fontSize = 13.sp)
         }
-        Text("This phone renders at ${size.width} x ${size.height}.", color = Color(0xFF555555), fontSize = 12.sp)
+        if (settings.nextRunAt > 0L) {
+            Text("Next refresh: " + formatWhen(context, settings.nextRunAt), color = Muted, fontSize = 12.sp)
+        }
+        Text("This phone renders at ${size.width} x ${size.height}.", color = Dim, fontSize = 12.sp)
     }
 }

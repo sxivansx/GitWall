@@ -11,15 +11,28 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
+/**
+ * Downloads the wallpaper and sets the lock screen. Three things enqueue it:
+ * the exact daily alarm, the user tapping the button, and the periodic
+ * safety net. The periodic run steps aside when the alarm already did the job.
+ */
 class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val store = SettingsStore(applicationContext)
-        val prepared = prepareWallpaperUrl(store.read().url, screenSize(applicationContext))
+        val settings = store.read()
+        val source = inputData.getString(KEY_SOURCE) ?: SOURCE_MANUAL
+
+        if (source == SOURCE_BACKUP) {
+            val fresh = System.currentTimeMillis() - settings.lastSuccessAt < BACKUP_SKIP_WINDOW_MS
+            if (fresh) return@withContext Result.success()
+        }
+
+        val prepared = prepareWallpaperUrl(settings.url, screenSize(applicationContext))
         if (prepared !is UrlCheck.Ok) {
             store.recordFailure("No valid wallpaper URL saved.")
             return@withContext Result.failure()
@@ -30,60 +43,81 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             Result.success()
         } catch (e: WallpaperException) {
             store.recordFailure(e.message ?: "Unknown error")
-            // Network trouble is worth a retry with backoff; a bad URL is not.
-            if (runAttemptCount < 3 && e.message?.startsWith("Could not reach") == true) Result.retry() else Result.failure()
+            // Network trouble is worth a few retries with backoff; a bad URL is not.
+            val transient = e.message?.startsWith("Could not reach") == true || e.message?.contains("HTTP 5") == true
+            if (transient && runAttemptCount < 5) Result.retry() else Result.failure()
         } catch (e: Exception) {
             store.recordFailure(e.message ?: e.javaClass.simpleName)
             Result.failure()
         }
     }
+
+    companion object {
+        const val KEY_SOURCE = "source"
+        const val SOURCE_MANUAL = "manual"
+        const val SOURCE_ALARM = "alarm"
+        const val SOURCE_BACKUP = "backup"
+        const val SOURCE_CATCHUP = "catchup"
+        private val BACKUP_SKIP_WINDOW_MS = TimeUnit.HOURS.toMillis(20)
+    }
 }
 
 object Scheduler {
-    private const val DAILY = "gitwall-daily"
-    private const val NOW = "gitwall-now"
+    private const val DAILY_BACKUP = "gitwall-daily"
+    private const val RUN = "gitwall-now"
+    private val STALE_MS = TimeUnit.HOURS.toMillis(26)
 
     private val network = Constraints.Builder()
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build()
 
     /**
-     * WorkManager cannot promise an exact minute. Anchoring the first run at
-     * the chosen time and repeating every 24h lands within the flex window on
-     * every device and survives reboots without a boot receiver. Re-enqueueing
-     * resets the anchor, which is what a changed time needs.
+     * Arms everything that keeps the wallpaper fresh:
+     *  1. An exact alarm at the chosen time, which fires on the minute even in
+     *     Doze and re-arms itself for the next day (see [AlarmReceiver]).
+     *  2. A 24h periodic job as a safety net in case the alarm is lost, which
+     *     skips itself when the alarm already refreshed within 20 hours.
      */
     fun scheduleDaily(context: Context, hour: Int, minute: Int) {
-        val request = PeriodicWorkRequestBuilder<RefreshWorker>(24, TimeUnit.HOURS, 30, TimeUnit.MINUTES)
+        DailyAlarm.arm(context, hour, minute)
+
+        val backup = PeriodicWorkRequestBuilder<RefreshWorker>(24, TimeUnit.HOURS, 2, TimeUnit.HOURS)
             .setConstraints(network)
-            .setInitialDelay(millisUntil(hour, minute), TimeUnit.MILLISECONDS)
+            .setInitialDelay(DailyAlarm.millisUntil(hour, minute) + TimeUnit.HOURS.toMillis(2), TimeUnit.MILLISECONDS)
+            .setInputData(workDataOf(RefreshWorker.KEY_SOURCE to RefreshWorker.SOURCE_BACKUP))
             .build()
         WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(DAILY, ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, request)
+            .enqueueUniquePeriodicWork(DAILY_BACKUP, ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, backup)
     }
 
     fun cancelDaily(context: Context) {
-        WorkManager.getInstance(context).cancelUniqueWork(DAILY)
+        DailyAlarm.cancel(context)
+        WorkManager.getInstance(context).cancelUniqueWork(DAILY_BACKUP)
     }
 
-    /** Applies the wallpaper right away, in the background, using the saved URL. */
-    fun runNow(context: Context) {
+    /** Applies the wallpaper right away in the background using the saved URL. */
+    fun runNow(context: Context, source: String = RefreshWorker.SOURCE_MANUAL) {
         val request = OneTimeWorkRequestBuilder<RefreshWorker>()
             .setConstraints(network)
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .setInputData(workDataOf(RefreshWorker.KEY_SOURCE to source))
             .build()
-        WorkManager.getInstance(context).enqueueUniqueWork(NOW, ExistingWorkPolicy.REPLACE, request)
+        WorkManager.getInstance(context).enqueueUniqueWork(RUN, ExistingWorkPolicy.REPLACE, request)
     }
 
-    private fun millisUntil(hour: Int, minute: Int): Long {
-        val now = Calendar.getInstance()
-        val next = (now.clone() as Calendar).apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (!after(now)) add(Calendar.DAY_OF_YEAR, 1)
+    /**
+     * Called when the app opens or the phone boots. If a refresh was missed
+     * (phone off, no network, aggressive battery saver) it catches up now and
+     * makes sure the alarm is armed, since alarms do not survive a reboot.
+     */
+    fun ensureHealthy(context: Context) {
+        val settings = SettingsStore(context).read()
+        if (settings.url.isBlank()) return
+        if (settings.nextRunAt < System.currentTimeMillis()) {
+            DailyAlarm.arm(context, settings.refreshHour, settings.refreshMinute)
         }
-        return next.timeInMillis - now.timeInMillis
+        if (System.currentTimeMillis() - settings.lastSuccessAt > STALE_MS) {
+            runNow(context, RefreshWorker.SOURCE_CATCHUP)
+        }
     }
 }

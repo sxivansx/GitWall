@@ -7,6 +7,7 @@ export async function GET() {
     name: t.name,
     colors: t.levels,
     background: t.background,
+    text: t.text,
   }));
   return NextResponse.json(themes);
 }
