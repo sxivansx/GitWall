@@ -56,6 +56,7 @@ const FALLBACK_THEMES: Theme[] = Object.entries(THEMES).map(([id, t]) => ({
   name: t.name,
   colors: t.levels,
   background: t.background,
+  text: t.text,
 }));
 
 const FALLBACK_DEVICES: Device[] = Object.entries(DEVICES)
@@ -118,18 +119,25 @@ function ImportantNote({ children }: { children: ReactNode }) {
   );
 }
 
-function UrlBox({
-  url,
-  copied,
-  onCopy,
-}: {
-  url: string | null;
-  copied: boolean;
-  onCopy: () => void;
-}) {
+function UrlBox({ url }: { url: string | null }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [copied, setCopied] = useState(false);
+  const copy = useCallback(async () => {
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API needs a secure context; select the text so a long-press
+      // or Cmd/Ctrl+C still works.
+      inputRef.current?.select();
+    }
+  }, [url]);
   return (
     <div className="flex gap-2 mt-1.5">
       <input
+        ref={inputRef}
         readOnly
         value={url || ""}
         placeholder="Complete step 1 first…"
@@ -137,7 +145,7 @@ function UrlBox({
         className="flex-1 min-w-0 bg-black/30 border border-white/[0.08] rounded-md px-3 py-2 text-[12px] text-emerald-400/80 placeholder:text-white/20 focus:outline-none font-mono"
       />
       <button
-        onClick={onCopy}
+        onClick={copy}
         disabled={!url}
         aria-label="Copy wallpaper URL"
         className="shrink-0 border border-white/[0.12] rounded-md px-3 text-white/50 hover:text-white hover:border-white/30 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
@@ -145,6 +153,68 @@ function UrlBox({
         {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
       </button>
     </div>
+  );
+}
+
+// Relative luminance of a #rrggbb colour, used to keep tile labels and the
+// selection ring readable on light backgrounds (Better Call Saul, Pokémon, Light).
+function isLightColor(hex: string): boolean {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return false;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.6;
+}
+
+function ThemeTile({
+  theme,
+  label,
+  selected,
+  onSelect,
+  square = false,
+}: {
+  theme: Theme;
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+  square?: boolean;
+}) {
+  const light = isLightColor(theme.background);
+  // Full-scene themes sometimes use the background as level 0; skip dots that
+  // would vanish against the tile.
+  const dots = theme.colors.filter((c) => c.toLowerCase() !== theme.background.toLowerCase());
+  return (
+    <button
+      onClick={onSelect}
+      aria-pressed={selected}
+      aria-label={`${label} theme`}
+      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
+        selected
+          ? light
+            ? "border-black/60 ring-2 ring-black/20"
+            : "border-white/50 ring-1 ring-white/10"
+          : light
+            ? "border-black/10 hover:border-black/30"
+            : "border-white/[0.07] hover:border-white/20"
+      }`}
+      style={{ background: theme.background === "#ffffff" ? "#f8f8f8" : theme.background }}
+    >
+      <div className="flex gap-1 justify-center mb-1.5">
+        {dots.map((c, i) => (
+          <span
+            key={i}
+            className={`w-2 h-2 ${square ? "" : "rounded-full"} ${light ? "ring-1 ring-black/10" : ""}`}
+            style={{ background: c }}
+          />
+        ))}
+      </div>
+      <span
+        className="text-[10px] font-semibold uppercase tracking-wider block text-center"
+        style={{ color: theme.text ?? (light ? "#1a1a1a" : "rgba(255,255,255,0.6)") }}
+      >
+        {label}
+      </span>
+    </button>
   );
 }
 
@@ -165,8 +235,8 @@ export default function Home() {
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [autoDetected, setAutoDetected] = useState(false);
+  const [isAndroidVisitor, setIsAndroidVisitor] = useState(false);
   const [themes, setThemes] = useState<Theme[]>(FALLBACK_THEMES);
   const [devices, setDevices] = useState<Device[]>(FALLBACK_DEVICES);
   // Monotonic id so an out-of-order preview fetch can't overwrite a newer one.
@@ -196,6 +266,7 @@ export default function Home() {
     const ua = navigator.userAgent;
     if (/Android/.test(ua)) {
       setPlatform("android");
+      setIsAndroidVisitor(true);
       const dpr = window.devicePixelRatio || 1;
       setAndroidScreen({
         width: Math.round(Math.min(screen.width, screen.height) * dpr),
@@ -309,20 +380,6 @@ export default function Home() {
     }
   }, [username, selectedTheme, iphoneDevice, platform, showStats, shape]);
 
-  const handleCopy = useCallback(async () => {
-    if (!wallpaperUrl) return;
-    try {
-      await navigator.clipboard.writeText(wallpaperUrl);
-    } catch {
-      // Clipboard API needs a secure context; fall back to selecting the field.
-      const input = document.querySelector<HTMLInputElement>("input[readonly][value^='http']");
-      input?.select();
-      return;
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [wallpaperUrl]);
-
   // Direct download for Android uses the browser-reported screen size so the
   // PNG matches the phone even without the app.
   const downloadUrl = (() => {
@@ -398,6 +455,23 @@ export default function Home() {
   const ironmanSelected = isIronmanId(selectedTheme);
   const ironmanGroup = ironmanThemes.find((t) => t.id === IRONMAN_DEFAULT) ?? ironmanThemes[0];
 
+  // Tiles in the Special row. Groups open their variant picker below; single
+  // themes select directly. Missing themes (API drift) simply do not render.
+  const specialGroups = (
+    [
+      { id: "minecraft", label: "Minecraft", theme: minecraftGroup, selected: minecraftSelected, defaultId: MINECRAFT_DEFAULT },
+      { id: "onepiece", label: "One Piece", theme: onepieceGroup, selected: onepieceSelected, defaultId: ONEPIECE_DEFAULT },
+      { id: "aot", label: "Attack on Titan", theme: aotGroup, selected: aotSelected, defaultId: AOT_DEFAULT },
+      { id: "got", label: "Game of Thrones", theme: gotGroup, selected: gotSelected, defaultId: GOT_DEFAULT },
+      { id: "spiderman", label: "Spider-Man", theme: spidermanGroup, selected: spidermanSelected, defaultId: SPIDERMAN_DEFAULT },
+      { id: "ironman", label: "Iron Man", theme: ironmanGroup, selected: ironmanSelected, defaultId: IRONMAN_DEFAULT },
+      { id: "pointblank", label: "Point Blank", theme: pointblankTheme, selected: pointblankSelected, defaultId: POINTBLANK_ID },
+      { id: "breakingbad", label: "Breaking Bad", theme: breakingbadTheme, selected: breakingbadSelected, defaultId: BREAKINGBAD_ID },
+      { id: "bettercallsaul", label: "Better Call Saul", theme: bettercallsaulTheme, selected: bettercallsaulSelected, defaultId: BETTERCALLSAUL_ID },
+      { id: "pokemon", label: "Pokémon", theme: pokemonGroup, selected: pokemonSelected, defaultId: POKEMON_DEFAULT },
+    ] as const
+  ).filter((g): g is typeof g & { theme: Theme } => g.theme !== undefined);
+
 
   const iphoneGuide = (
     <div className="space-y-3">
@@ -413,7 +487,7 @@ export default function Home() {
         <p className="text-[11px] font-semibold text-white/30 tracking-wide uppercase">Add these actions</p>
         <SubStep num="3.1">
           <p><b className="font-semibold text-white/75">“Get Contents of URL”</b> → paste your wallpaper URL:</p>
-          <UrlBox url={wallpaperUrl} copied={copied} onCopy={handleCopy} />
+          <UrlBox url={wallpaperUrl} />
         </SubStep>
         <SubStep num="3.2">
           <p><b className="font-semibold text-white/75">“Set Wallpaper Photo”</b> → choose <b className="font-semibold text-white/75">Lock Screen</b>.</p>
@@ -434,7 +508,7 @@ export default function Home() {
         <p>Enter your GitHub username, choose a theme above, then tap <b className="font-semibold text-white/75">Generate</b>. No phone model needed: the app measures your screen.</p>
       </StepCard>
       <StepCard num="2" title="Install the GitWall app">
-        <p>A small app that does one thing: fetches your wallpaper and sets it as the lock screen, then repeats every morning.</p>
+        <p>A small app that does one thing: fetches your wallpaper and sets it as the lock screen, then repeats every day at a time you choose.</p>
         <a
           href={ANDROID_APP_PATH}
           className="inline-flex items-center gap-2 mt-1 px-3.5 py-2 rounded-md border border-[#3ddc84]/30 bg-[#3ddc84]/[0.06] text-[#3ddc84] text-[12px] font-semibold hover:bg-[#3ddc84]/[0.12] transition-colors"
@@ -447,8 +521,12 @@ export default function Home() {
         </ImportantNote>
       </StepCard>
       <StepCard num="3" title="Send the URL to the app">
-        <p>Tap the button below on your phone. The app opens with the URL filled in. Or copy the URL and paste it into the app.</p>
-        {wallpaperUrl ? (
+        <p>On your phone, tap the button below and the app opens with the URL filled in. Or copy the URL and paste it into the app.</p>
+        {!wallpaperUrl ? (
+          <p className="text-white/30 text-[12px]">Complete step 1 to enable this button.</p>
+        ) : !isAndroidVisitor ? (
+          <p className="text-white/30 text-[12px]">You are not on an Android phone. Open gitwall.space on your phone to use this button, or copy the URL below into the app.</p>
+        ) : (
           <a
             href={androidAppLink(wallpaperUrl, androidAppDownload)}
             className="inline-flex items-center gap-2 mt-1 px-3.5 py-2 rounded-md bg-white text-black text-[12px] font-bold hover:bg-white/90 transition-colors"
@@ -456,13 +534,12 @@ export default function Home() {
             <ExternalLink className="size-3.5" />
             Open in GitWall app
           </a>
-        ) : (
-          <p className="text-white/30 text-[12px]">Complete step 1 to enable this button.</p>
         )}
-        <UrlBox url={wallpaperUrl} copied={copied} onCopy={handleCopy} />
+        <UrlBox url={wallpaperUrl} />
       </StepCard>
       <StepCard num="4" title="Set it">
-        <p>In the app tap <b className="font-semibold text-white/75">Set lock screen wallpaper</b>. Your lock screen updates right away and refreshes every day at the time you choose in the app (6:00 by default).</p>
+        <p>In the app tap <b className="font-semibold text-white/75">Set lock screen wallpaper</b>. Your lock screen updates right away and refreshes every day at the time you choose (6:00 by default).</p>
+        <p>Tap <b className="font-semibold text-white/75">Allow</b> next to Background refresh so Android lets the app fetch while the phone sleeps.</p>
         <ImportantNote>
           If your phone has a rotating lock screen feature such as Samsung <b className="font-semibold text-amber-200/90">Dynamic Lock screen</b> or Xiaomi <b className="font-semibold text-amber-200/90">Wallpaper Carousel</b>, turn it off or it will replace GitWall.
         </ImportantNote>
@@ -475,7 +552,17 @@ export default function Home() {
       <div className="mx-auto max-w-[1060px] px-6">
 
         {/* Hero */}
-        <header className="pt-16 pb-14 border-b border-white/[0.06]">
+        <header className="pt-10 pb-14 border-b border-white/[0.06]">
+          {/* Brand row: the same four-cell mark as the favicon and the Android app icon */}
+          <div className="flex items-center gap-3 mb-12">
+            <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true" className="shrink-0">
+              <rect x="0" y="0" width="14" height="14" rx="3" fill="#161b22" />
+              <rect x="18" y="0" width="14" height="14" rx="3" fill="#39d353" />
+              <rect x="0" y="18" width="14" height="14" rx="3" fill="#39d353" />
+              <rect x="18" y="18" width="14" height="14" rx="3" fill="#161b22" />
+            </svg>
+            <span className="text-[17px] font-bold tracking-tight text-white">GitWall</span>
+          </div>
           <h1 className="text-[52px] lg:text-[64px] font-extrabold leading-[1.05] tracking-[-0.03em] mb-5 max-w-2xl">
             GitHub contributions as your wallpaper.
           </h1>
@@ -617,30 +704,7 @@ export default function Home() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {gridThemes.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setSelectedTheme(t.id)}
-                      aria-pressed={selectedTheme === t.id}
-                      aria-label={`${t.name} theme`}
-                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                        selectedTheme === t.id
-                          ? "border-white/50 ring-1 ring-white/10"
-                          : "border-white/[0.07] hover:border-white/20"
-                      }`}
-                      style={{ background: t.background === "#ffffff" ? "#f8f8f8" : t.background }}
-                    >
-                      <div className="flex gap-1 justify-center mb-1.5">
-                        {t.colors.map((c, i) => (
-                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
-                        ))}
-                      </div>
-                      <span
-                        className="text-[10px] font-semibold uppercase tracking-wider block text-center"
-                        style={{ color: t.id === "light" ? "#1a1a1a" : "rgba(255,255,255,0.6)" }}
-                      >
-                        {t.name}
-                      </span>
-                    </button>
+                    <ThemeTile key={t.id} theme={t} label={t.name} selected={selectedTheme === t.id} onSelect={() => setSelectedTheme(t.id)} />
                   ))}
                 </div>
 
@@ -678,245 +742,16 @@ export default function Home() {
                   Special
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {/* Minecraft group — opens the block-style sub-options below */}
-                  {minecraftGroup && (
-                    <button
-                      onClick={() => { if (!minecraftSelected) setSelectedTheme(MINECRAFT_DEFAULT); }}
-                      aria-pressed={minecraftSelected}
-                      aria-label="Minecraft themes"
-                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                        minecraftSelected
-                          ? "border-white/50 ring-1 ring-white/10"
-                          : "border-white/[0.07] hover:border-white/20"
-                      }`}
-                      style={{ background: minecraftGroup.background }}
-                    >
-                      <div className="flex gap-1 justify-center mb-1.5">
-                        {minecraftGroup.colors.map((c, i) => (
-                          <span key={i} className="w-2 h-2" style={{ background: c }} />
-                        ))}
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
-                        Minecraft
-                      </span>
-                    </button>
-                  )}
-
-                  {/* One Piece group */}
-                  {onepieceGroup && (
-                    <button
-                      onClick={() => { if (!onepieceSelected) setSelectedTheme(ONEPIECE_DEFAULT); }}
-                      aria-pressed={onepieceSelected}
-                      aria-label="One Piece themes"
-                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                        onepieceSelected
-                          ? "border-white/50 ring-1 ring-white/10"
-                          : "border-white/[0.07] hover:border-white/20"
-                      }`}
-                      style={{ background: onepieceGroup.background }}
-                    >
-                      <div className="flex gap-1 justify-center mb-1.5">
-                        {onepieceGroup.colors.map((c, i) => (
-                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
-                        ))}
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
-                        One Piece
-                      </span>
-                    </button>
-                  )}
-
-                  {/* Attack on Titan group */}
-                  {aotGroup && (
-                    <button
-                      onClick={() => { if (!aotSelected) setSelectedTheme(AOT_DEFAULT); }}
-                      aria-pressed={aotSelected}
-                      aria-label="Attack on Titan themes"
-                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                        aotSelected
-                          ? "border-white/50 ring-1 ring-white/10"
-                          : "border-white/[0.07] hover:border-white/20"
-                      }`}
-                      style={{ background: aotGroup.background }}
-                    >
-                      <div className="flex gap-1 justify-center mb-1.5">
-                        {aotGroup.colors.map((c, i) => (
-                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
-                        ))}
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
-                        Attack on Titan
-                      </span>
-                    </button>
-                  )}
-
-                  {/* Game of Thrones group */}
-                  {gotGroup && (
-                    <button
-                      onClick={() => { if (!gotSelected) setSelectedTheme(GOT_DEFAULT); }}
-                      aria-pressed={gotSelected}
-                      aria-label="Game of Thrones themes"
-                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                        gotSelected
-                          ? "border-white/50 ring-1 ring-white/10"
-                          : "border-white/[0.07] hover:border-white/20"
-                      }`}
-                      style={{ background: gotGroup.background }}
-                    >
-                      <div className="flex gap-1 justify-center mb-1.5">
-                        {gotGroup.colors.map((c, i) => (
-                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
-                        ))}
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
-                        Game of Thrones
-                      </span>
-                    </button>
-                  )}
-
-                  {/* Spider-Man group */}
-                  {spidermanGroup && (
-                    <button
-                      onClick={() => { if (!spidermanSelected) setSelectedTheme(SPIDERMAN_DEFAULT); }}
-                      aria-pressed={spidermanSelected}
-                      aria-label="Spider-Man themes"
-                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                        spidermanSelected
-                          ? "border-white/50 ring-1 ring-white/10"
-                          : "border-white/[0.07] hover:border-white/20"
-                      }`}
-                      style={{ background: spidermanGroup.background }}
-                    >
-                      <div className="flex gap-1 justify-center mb-1.5">
-                        {spidermanGroup.colors.map((c, i) => (
-                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
-                        ))}
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
-                        Spider-Man
-                      </span>
-                    </button>
-                  )}
-
-                  {/* Iron Man group */}
-                  {ironmanGroup && (
-                    <button
-                      onClick={() => { if (!ironmanSelected) setSelectedTheme(IRONMAN_DEFAULT); }}
-                      aria-pressed={ironmanSelected}
-                      aria-label="Iron Man themes"
-                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                        ironmanSelected
-                          ? "border-white/50 ring-1 ring-white/10"
-                          : "border-white/[0.07] hover:border-white/20"
-                      }`}
-                      style={{ background: ironmanGroup.background }}
-                    >
-                      <div className="flex gap-1 justify-center mb-1.5">
-                        {ironmanGroup.colors.map((c, i) => (
-                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
-                        ))}
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
-                        Iron Man
-                      </span>
-                    </button>
-                  )}
-
-                  {/* Point Blank — a single full-scene theme (no variants) */}
-                  {pointblankTheme && (
-                    <button
-                      onClick={() => setSelectedTheme(POINTBLANK_ID)}
-                      aria-pressed={pointblankSelected}
-                      aria-label="Point Blank theme"
-                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                        pointblankSelected
-                          ? "border-white/50 ring-1 ring-white/10"
-                          : "border-white/[0.07] hover:border-white/20"
-                      }`}
-                      style={{ background: pointblankTheme.background }}
-                    >
-                      <div className="flex gap-1 justify-center mb-1.5">
-                        {pointblankTheme.colors.map((c, i) => (
-                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
-                        ))}
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
-                        Point Blank
-                      </span>
-                    </button>
-                  )}
-
-                  {/* Breaking Bad */}
-                  {breakingbadTheme && (
-                    <button
-                      onClick={() => setSelectedTheme(BREAKINGBAD_ID)}
-                      aria-pressed={breakingbadSelected}
-                      aria-label="Breaking Bad theme"
-                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                        breakingbadSelected
-                          ? "border-white/50 ring-1 ring-white/10"
-                          : "border-white/[0.07] hover:border-white/20"
-                      }`}
-                      style={{ background: breakingbadTheme.background }}
-                    >
-                      <div className="flex gap-1 justify-center mb-1.5">
-                        {breakingbadTheme.levels?.slice(1).map((c, i) => (
-                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
-                        ))}
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60" style={{ color: breakingbadTheme.text }}>
-                        Breaking Bad
-                      </span>
-                    </button>
-                  )}
-
-                  {/* Better Call Saul */}
-                  {bettercallsaulTheme && (
-                    <button
-                      onClick={() => setSelectedTheme(BETTERCALLSAUL_ID)}
-                      aria-pressed={bettercallsaulSelected}
-                      aria-label="Better Call Saul theme"
-                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                        bettercallsaulSelected
-                          ? "border-white/50 ring-1 ring-white/10"
-                          : "border-white/[0.07] hover:border-white/20"
-                      }`}
-                      style={{ background: bettercallsaulTheme.background }}
-                    >
-                      <div className="flex gap-1 justify-center mb-1.5">
-                        {bettercallsaulTheme.levels?.slice(1).map((c, i) => (
-                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
-                        ))}
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60" style={{ color: bettercallsaulTheme.text }}>
-                        Better Call Saul
-                      </span>
-                    </button>
-                  )}
-
-                  {/* Pokémon group */}
-                  {pokemonGroup && (
-                    <button
-                      onClick={() => { if (!pokemonSelected) setSelectedTheme(POKEMON_DEFAULT); }}
-                      aria-pressed={pokemonSelected}
-                      aria-label="Pokémon themes"
-                      className={`px-3.5 py-2.5 rounded-lg border transition-all cursor-pointer ${
-                        pokemonSelected
-                          ? "border-white/50 ring-1 ring-white/10"
-                          : "border-white/[0.07] hover:border-white/20"
-                      }`}
-                      style={{ background: pokemonGroup.background }}
-                    >
-                      <div className="flex gap-1 justify-center mb-1.5">
-                        {pokemonGroup.colors.map((c, i) => (
-                          <span key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
-                        ))}
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider block text-center text-white/60">
-                        Pokémon
-                      </span>
-                    </button>
-                  )}
+                  {specialGroups.map((g) => (
+                    <ThemeTile
+                      key={g.id}
+                      theme={g.theme}
+                      label={g.label}
+                      selected={g.selected}
+                      square={g.id === "minecraft"}
+                      onSelect={() => { if (!g.selected) setSelectedTheme(g.defaultId); }}
+                    />
+                  ))}
                 </div>
 
                 {/* Minecraft block variants */}
