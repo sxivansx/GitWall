@@ -106,16 +106,15 @@ object Scheduler {
     }
 
     /**
-     * Called when the app opens or the phone boots. If a refresh was missed
-     * (phone off, no network, aggressive battery saver) it catches up now and
-     * makes sure the alarm is armed, since alarms do not survive a reboot.
+     * Called when the app opens or the phone boots. Always re-arms the alarm,
+     * because a reboot or a force-stop silently drops it and arming is
+     * idempotent. If a refresh was missed (phone off, no network, aggressive
+     * battery saver) it catches up now.
      */
     fun ensureHealthy(context: Context) {
         val settings = SettingsStore(context).read()
         if (settings.url.isBlank()) return
-        if (settings.nextRunAt < System.currentTimeMillis()) {
-            DailyAlarm.arm(context, settings.refreshHour, settings.refreshMinute)
-        }
+        DailyAlarm.arm(context, settings.refreshHour, settings.refreshMinute)
         if (System.currentTimeMillis() - settings.lastSuccessAt > STALE_MS) {
             runNow(context, RefreshWorker.SOURCE_CATCHUP)
         }

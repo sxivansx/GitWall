@@ -538,7 +538,8 @@ export default function Home() {
         <UrlBox url={wallpaperUrl} />
       </StepCard>
       <StepCard num="4" title="Set it">
-        <p>In the app tap <b className="font-semibold text-white/75">Set lock screen wallpaper</b>. Your lock screen updates right away and refreshes every day at the time you choose in the app (6:00 by default).</p>
+        <p>In the app tap <b className="font-semibold text-white/75">Set lock screen wallpaper</b>. Your lock screen updates right away and refreshes every day at the time you choose (6:00 by default).</p>
+        <p>Tap <b className="font-semibold text-white/75">Allow</b> next to Background refresh so Android lets the app fetch while the phone sleeps.</p>
         <ImportantNote>
           If your phone has a rotating lock screen feature such as Samsung <b className="font-semibold text-amber-200/90">Dynamic Lock screen</b> or Xiaomi <b className="font-semibold text-amber-200/90">Wallpaper Carousel</b>, turn it off or it will replace GitWall.
         </ImportantNote>
@@ -551,7 +552,17 @@ export default function Home() {
       <div className="mx-auto max-w-[1060px] px-6">
 
         {/* Hero */}
-        <header className="pt-16 pb-14 border-b border-white/[0.06]">
+        <header className="pt-10 pb-14 border-b border-white/[0.06]">
+          {/* Brand row: the same four-cell mark as the favicon and the Android app icon */}
+          <div className="flex items-center gap-3 mb-12">
+            <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true" className="shrink-0">
+              <rect x="0" y="0" width="14" height="14" rx="3" fill="#161b22" />
+              <rect x="18" y="0" width="14" height="14" rx="3" fill="#39d353" />
+              <rect x="0" y="18" width="14" height="14" rx="3" fill="#39d353" />
+              <rect x="18" y="18" width="14" height="14" rx="3" fill="#161b22" />
+            </svg>
+            <span className="text-[17px] font-bold tracking-tight text-white">GitWall</span>
+          </div>
           <h1 className="text-[52px] lg:text-[64px] font-extrabold leading-[1.05] tracking-[-0.03em] mb-5 max-w-2xl">
             GitHub contributions as your wallpaper.
           </h1>
