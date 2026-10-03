@@ -17,7 +17,7 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 /**
- * Downloads the wallpaper and sets the lock screen. Three things enqueue it:
+ * Downloads the wallpaper and sets the chosen screens. Three things enqueue it:
  * the exact daily alarm, the user tapping the button, and the periodic
  * safety net. The periodic run steps aside when the alarm already did the job.
  */
@@ -38,7 +38,7 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             return@withContext Result.failure()
         }
         try {
-            WallpaperApplier.applyLockScreen(applicationContext, prepared.url)
+            WallpaperApplier.apply(applicationContext, prepared.url, settings.lockScreen, settings.homeScreen)
             store.recordSuccess()
             Result.success()
         } catch (e: WallpaperException) {

@@ -41,6 +41,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -167,6 +169,10 @@ private fun Screen(incomingUrl: String?, onIncomingConsumed: () -> Unit) {
     }
 
     fun apply() {
+        if (!settings.lockScreen && !settings.homeScreen) {
+            message = "Turn on Lock screen, Home screen, or both."
+            return
+        }
         when (val check = prepareWallpaperUrl(url, size)) {
             is UrlCheck.Invalid -> message = check.reason
             is UrlCheck.Ok -> {
@@ -239,6 +245,15 @@ private fun Screen(incomingUrl: String?, onIncomingConsumed: () -> Unit) {
         }
 
         Spacer(Modifier.height(14.dp))
+        Card {
+            Label("Apply to")
+            Spacer(Modifier.height(4.dp))
+            ToggleRow("Lock screen", settings.lockScreen) { store.saveTargets(it, settings.homeScreen); message = null }
+            Divider()
+            ToggleRow("Home screen", settings.homeScreen) { store.saveTargets(settings.lockScreen, it); message = null }
+        }
+
+        Spacer(Modifier.height(14.dp))
         Button(
             onClick = ::apply,
             modifier = Modifier.fillMaxWidth().height(54.dp),
@@ -253,7 +268,7 @@ private fun Screen(incomingUrl: String?, onIncomingConsumed: () -> Unit) {
                 }
                 RunState.WAITING_NETWORK -> Text("Waiting for internet", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 RunState.IDLE -> Text(
-                    if (settings.lastSuccessAt > 0L) "Update lock screen now" else "Set lock screen wallpaper",
+                    if (settings.lastSuccessAt > 0L) "Update wallpaper now" else "Set wallpaper",
                     fontWeight = FontWeight.Bold, fontSize = 15.sp,
                 )
             }
@@ -305,7 +320,7 @@ private fun Header() {
         Spacer(Modifier.width(12.dp))
         Column {
             Text("GitWall", color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp)
-            Text("Your contribution graph, on your lock screen.", color = TextMuted, fontSize = 13.sp)
+            Text("Your contribution graph, as your wallpaper.", color = TextMuted, fontSize = 13.sp)
         }
     }
 }
@@ -390,10 +405,10 @@ private fun UrlField(value: String, onChange: (String) -> Unit) {
 private fun StatusCard(settings: Settings, runState: RunState, size: ScreenSize) {
     val context = LocalContext.current
     val (tone, headline) = when {
-        runState == RunState.RUNNING -> Green to "Setting your lock screen…"
+        runState == RunState.RUNNING -> Green to "Setting your wallpaper…"
         runState == RunState.WAITING_NETWORK -> Amber to "Waiting for an internet connection."
         settings.lastError != null -> Danger to "Last attempt failed"
-        settings.lastSuccessAt > 0L -> Green to "Lock screen updated " + relative(settings.lastSuccessAt)
+        settings.lastSuccessAt > 0L -> Green to "Wallpaper updated " + relative(settings.lastSuccessAt)
         else -> TextMuted to "Not set yet"
     }
     Card {
@@ -417,6 +432,25 @@ private fun StatusCard(settings: Settings, runState: RunState, size: ScreenSize)
         InfoRow("Next refresh", if (settings.nextRunAt > 0L) formatWhen(context, settings.nextRunAt) else "Not scheduled")
         Spacer(Modifier.height(6.dp))
         InfoRow("Screen size", "${size.width} × ${size.height}")
+    }
+}
+
+@Composable
+private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onChange(!checked) }.padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, color = TextPrimary, fontSize = 14.sp)
+        Switch(
+            checked = checked,
+            onCheckedChange = onChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Ink, checkedTrackColor = Green,
+                uncheckedThumbColor = TextMuted, uncheckedTrackColor = PanelRaised, uncheckedBorderColor = Line,
+            ),
+        )
     }
 }
 

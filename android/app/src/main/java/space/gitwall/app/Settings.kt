@@ -11,6 +11,9 @@ data class Settings(
     /** Daily refresh time, local clock. */
     val refreshHour: Int = 6,
     val refreshMinute: Int = 0,
+    /** Which wallpapers to set. At least one is always on. */
+    val lockScreen: Boolean = true,
+    val homeScreen: Boolean = false,
     val lastSuccessAt: Long = 0L,
     val lastAttemptAt: Long = 0L,
     val lastError: String? = null,
@@ -27,6 +30,8 @@ class SettingsStore(context: Context) {
         url = prefs.getString(KEY_URL, "") ?: "",
         refreshHour = prefs.getInt(KEY_HOUR, 6),
         refreshMinute = prefs.getInt(KEY_MINUTE, 0),
+        lockScreen = prefs.getBoolean(KEY_LOCK, true),
+        homeScreen = prefs.getBoolean(KEY_HOME, false),
         lastSuccessAt = prefs.getLong(KEY_LAST_SUCCESS, 0L),
         lastAttemptAt = prefs.getLong(KEY_LAST_ATTEMPT, 0L),
         lastError = prefs.getString(KEY_LAST_ERROR, null),
@@ -48,6 +53,10 @@ class SettingsStore(context: Context) {
         prefs.edit().putInt(KEY_HOUR, hour.coerceIn(0, 23)).putInt(KEY_MINUTE, minute.coerceIn(0, 59)).apply()
     }
 
+    fun saveTargets(lockScreen: Boolean, homeScreen: Boolean) {
+        prefs.edit().putBoolean(KEY_LOCK, lockScreen).putBoolean(KEY_HOME, homeScreen).apply()
+    }
+
     fun saveNextRun(at: Long) {
         prefs.edit().putLong(KEY_NEXT_RUN, at).apply()
     }
@@ -65,6 +74,8 @@ class SettingsStore(context: Context) {
         const val KEY_URL = "url"
         const val KEY_HOUR = "refresh_hour"
         const val KEY_MINUTE = "refresh_minute"
+        const val KEY_LOCK = "target_lock"
+        const val KEY_HOME = "target_home"
         const val KEY_LAST_SUCCESS = "last_success"
         const val KEY_LAST_ATTEMPT = "last_attempt"
         const val KEY_LAST_ERROR = "last_error"

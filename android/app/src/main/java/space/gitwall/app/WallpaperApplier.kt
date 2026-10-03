@@ -11,13 +11,18 @@ class WallpaperException(message: String) : Exception(message)
 
 /**
  * Downloads the PNG into memory and hands it to WallpaperManager for the lock
- * screen. Nothing is written to shared storage, so it does not matter how a
- * manufacturer stores or copies wallpapers internally.
+ * screen, the home screen, or both. Nothing is written to shared storage, so it
+ * does not matter how a manufacturer stores or copies wallpapers internally.
  */
 object WallpaperApplier {
     private const val MAX_BYTES = 40L * 1024 * 1024
 
-    fun applyLockScreen(context: Context, url: String) {
+    fun apply(context: Context, url: String, lockScreen: Boolean, homeScreen: Boolean) {
+        var flags = 0
+        if (lockScreen) flags = flags or WallpaperManager.FLAG_LOCK
+        if (homeScreen) flags = flags or WallpaperManager.FLAG_SYSTEM
+        if (flags == 0) throw WallpaperException("Choose at least one screen to set.")
+
         val bytes = download(url)
         val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             ?: throw WallpaperException("The server did not return an image.")
@@ -27,7 +32,7 @@ object WallpaperApplier {
             throw WallpaperException("This device or profile does not allow apps to change the wallpaper.")
         }
         try {
-            manager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
+            manager.setBitmap(bitmap, null, true, flags)
         } catch (e: IOException) {
             throw WallpaperException("Android refused the wallpaper: ${e.message ?: "unknown error"}")
         } finally {
