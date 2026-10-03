@@ -490,7 +490,7 @@ export default function Home() {
           <UrlBox url={wallpaperUrl} />
         </SubStep>
         <SubStep num="3.2">
-          <p><b className="font-semibold text-white/75">“Set Wallpaper Photo”</b> → choose <b className="font-semibold text-white/75">Lock Screen</b>.</p>
+          <p><b className="font-semibold text-white/75">“Set Wallpaper Photo”</b> → under <b className="font-semibold text-white/75">Set</b>, choose <b className="font-semibold text-white/75">Lock Screen</b>, <b className="font-semibold text-white/75">Home Screen</b>, or <b className="font-semibold text-white/75">Lock Screen and Home Screen</b>.</p>
         </SubStep>
         <ImportantNote>
           <b className="font-semibold text-amber-300/90">Important:</b> In “Set Wallpaper Photo”, tap the arrow (→) to show options → disable both <b className="font-semibold text-amber-200/90">“Crop to Subject”</b> and <b className="font-semibold text-amber-200/90">“Show Preview”</b>. This stops iOS from cropping the image and asking for confirmation every day.
@@ -508,7 +508,7 @@ export default function Home() {
         <p>Enter your GitHub username, choose a theme above, then tap <b className="font-semibold text-white/75">Generate</b>. No phone model needed: the app measures your screen.</p>
       </StepCard>
       <StepCard num="2" title="Install the GitWall app">
-        <p>A small app that does one thing: fetches your wallpaper and sets it as the lock screen, then repeats every day at a time you choose.</p>
+        <p>A small app that does one thing: fetches your wallpaper and sets it on your lock screen, home screen, or both, then repeats every day at a time you choose.</p>
         <a
           href={ANDROID_APP_PATH}
           className="inline-flex items-center gap-2 mt-1 px-3.5 py-2 rounded-md border border-[#3ddc84]/30 bg-[#3ddc84]/[0.06] text-[#3ddc84] text-[12px] font-semibold hover:bg-[#3ddc84]/[0.12] transition-colors"
@@ -538,7 +538,7 @@ export default function Home() {
         <UrlBox url={wallpaperUrl} />
       </StepCard>
       <StepCard num="4" title="Set it">
-        <p>In the app tap <b className="font-semibold text-white/75">Set lock screen wallpaper</b>. Your lock screen updates right away and refreshes every day at the time you choose (6:00 by default).</p>
+        <p>In the app, turn on <b className="font-semibold text-white/75">Lock screen</b>, <b className="font-semibold text-white/75">Home screen</b>, or both, then tap <b className="font-semibold text-white/75">Set wallpaper</b>. It updates right away and refreshes every day at the time you choose (6:00 by default).</p>
         <p>Tap <b className="font-semibold text-white/75">Allow</b> next to Background refresh so Android lets the app fetch while the phone sleeps.</p>
         <ImportantNote>
           If your phone has a rotating lock screen feature such as Samsung <b className="font-semibold text-amber-200/90">Dynamic Lock screen</b> or Xiaomi <b className="font-semibold text-amber-200/90">Wallpaper Carousel</b>, turn it off or it will replace GitWall.

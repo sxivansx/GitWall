@@ -11,7 +11,7 @@ Turn your GitHub contribution graph into a phone wallpaper.
 - **Android** support: 70+ devices across Samsung, Google Pixel, OnePlus, Xiaomi, Nothing, Motorola, Sony, ASUS, OPPO, vivo, Realme, and Honor
 - Shows contribution stats: total count and current streak
 - iOS Shortcut-compatible URL for daily auto-updating wallpapers (iPhone)
-- GitWall Android app (`android/`) that sets the lock screen from the same URL and refreshes daily
+- GitWall Android app (`android/`) that sets the lock screen and/or home screen from the same URL and refreshes daily
 - In-memory caching with 5-minute TTL
 
 ## Setup
@@ -69,14 +69,14 @@ The API returns proper status codes: `400` for a missing or malformed username, 
 1. Generate your wallpaper and copy the Shortcut URL
 2. Open iOS Shortcuts → New Shortcut
 3. Add **Get Contents of URL** with the copied URL
-4. Add **Set Wallpaper** using the result
+4. Add **Set Wallpaper Photo** using the result and choose Lock Screen, Home Screen, or both
 5. Automate it: Automation → Time of Day → run daily
 
 **Android (GitWall app)**
 1. Generate your wallpaper and copy the URL (no phone model needed)
 2. Install the GitWall app from the website's **Download APK** button (`/download/android`)
 3. Tap **Open in GitWall app**, or paste the URL into the app
-4. Tap **Set lock screen wallpaper**. The app appends your phone's real resolution, sets the lock screen directly through Android's wallpaper API, and refreshes daily at a time you pick (06:00 by default)
+4. Choose Lock screen, Home screen, or both, then tap **Set wallpaper**. The app appends your phone's real resolution, sets the wallpaper directly through Android's wallpaper API, and refreshes daily at a time you pick (06:00 by default)
 
 Task-automation apps such as MacroDroid cannot do this reliably: Android copies wallpapers into private system storage, so replacing a file on disk never changes the lock screen, and newer Android versions block writes to shared folders.
 
