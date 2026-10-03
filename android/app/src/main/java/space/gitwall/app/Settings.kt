@@ -8,9 +8,9 @@ import kotlinx.coroutines.flow.callbackFlow
 
 data class Settings(
     val url: String = "",
-    /** Daily refresh time, local clock. */
-    val refreshHour: Int = 6,
-    val refreshMinute: Int = 0,
+    /** Daily refresh time, local clock. Defaults to 00:01 so the new day's graph lands right after midnight. */
+    val refreshHour: Int = DEFAULT_HOUR,
+    val refreshMinute: Int = DEFAULT_MINUTE,
     /** Which wallpapers to set. At least one is always on. */
     val lockScreen: Boolean = true,
     val homeScreen: Boolean = false,
@@ -19,7 +19,12 @@ data class Settings(
     val lastError: String? = null,
     /** Epoch millis of the next scheduled exact alarm, 0 when none is set. */
     val nextRunAt: Long = 0L,
-)
+) {
+    companion object {
+        const val DEFAULT_HOUR = 0
+        const val DEFAULT_MINUTE = 1
+    }
+}
 
 /** One small SharedPreferences file; a listener-backed Flow keeps the UI in sync with the worker. */
 class SettingsStore(context: Context) {
@@ -28,8 +33,8 @@ class SettingsStore(context: Context) {
 
     fun read(): Settings = Settings(
         url = prefs.getString(KEY_URL, "") ?: "",
-        refreshHour = prefs.getInt(KEY_HOUR, 6),
-        refreshMinute = prefs.getInt(KEY_MINUTE, 0),
+        refreshHour = prefs.getInt(KEY_HOUR, Settings.DEFAULT_HOUR),
+        refreshMinute = prefs.getInt(KEY_MINUTE, Settings.DEFAULT_MINUTE),
         lockScreen = prefs.getBoolean(KEY_LOCK, true),
         homeScreen = prefs.getBoolean(KEY_HOME, false),
         lastSuccessAt = prefs.getLong(KEY_LAST_SUCCESS, 0L),

@@ -538,7 +538,7 @@ export default function Home() {
         <UrlBox url={wallpaperUrl} />
       </StepCard>
       <StepCard num="4" title="Set it">
-        <p>In the app, turn on <b className="font-semibold text-white/75">Lock screen</b>, <b className="font-semibold text-white/75">Home screen</b>, or both, then tap <b className="font-semibold text-white/75">Set wallpaper</b>. It updates right away and refreshes every day at the time you choose (6:00 by default).</p>
+        <p>In the app, turn on <b className="font-semibold text-white/75">Lock screen</b>, <b className="font-semibold text-white/75">Home screen</b>, or both, then tap <b className="font-semibold text-white/75">Set wallpaper</b>. It updates right away and refreshes every day at the time you choose (12:01 AM by default, so the new day shows up right after midnight).</p>
         <p>Tap <b className="font-semibold text-white/75">Allow</b> next to Background refresh so Android lets the app fetch while the phone sleeps.</p>
         <ImportantNote>
           If your phone has a rotating lock screen feature such as Samsung <b className="font-semibold text-amber-200/90">Dynamic Lock screen</b> or Xiaomi <b className="font-semibold text-amber-200/90">Wallpaper Carousel</b>, turn it off or it will replace GitWall.
