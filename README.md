@@ -76,7 +76,7 @@ The API returns proper status codes: `400` for a missing or malformed username, 
 1. Generate your wallpaper and copy the URL (no phone model needed)
 2. Install the GitWall app from the website's **Download APK** button (`/download/android`)
 3. Tap **Open in GitWall app**, or paste the URL into the app
-4. Choose Lock screen, Home screen, or both, then tap **Set wallpaper**. The app appends your phone's real resolution, sets the wallpaper directly through Android's wallpaper API, and refreshes daily at a time you pick (06:00 by default)
+4. Choose Lock screen, Home screen, or both, then tap **Set wallpaper**. The app appends your phone's real resolution, sets the wallpaper directly through Android's wallpaper API, and refreshes daily at a time you pick (00:01 by default)
 
 Task-automation apps such as MacroDroid cannot do this reliably: Android copies wallpapers into private system storage, so replacing a file on disk never changes the lock screen, and newer Android versions block writes to shared folders.
 
