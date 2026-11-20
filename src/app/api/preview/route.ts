@@ -6,6 +6,12 @@ export async function GET(request: NextRequest) {
   const user = searchParams.get("user");
   const theme = searchParams.get("theme") || "classic";
   const statsParam = searchParams.get("stats");
+  const positionParam = searchParams.get("usernamePosition");
+
+  const usernamePosition =
+    positionParam === "top" || positionParam === "hidden"
+      ? positionParam
+      : "bottom";
   const shape = searchParams.get("shape") === "circle" ? "circle" : "box";
 
   if (!user) {
@@ -16,12 +22,13 @@ export async function GET(request: NextRequest) {
   }
 
   const stats = statsParam !== "false";
-  const cacheKey = `preview:${user}:${theme}:${stats}:${shape}`;
+  const cacheKey =
+    `preview:${user}:${theme}:${stats}:${shape}:${usernamePosition}`;
 
   return buildWallpaperResponse(
     user,
     cacheKey,
-    { theme, device: "preview", stats, user, shape },
+    { theme, device: "preview", stats, user, shape, usernamePosition },
     "preview"
   );
 }
