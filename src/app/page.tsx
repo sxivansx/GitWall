@@ -70,6 +70,7 @@ function settingsKey(p: {
   user: string;
   theme: string;
   stats: string;
+  usernamePosition: string;
   shape: string;
   platform: string;
   device: string | undefined;
@@ -146,7 +147,7 @@ function UrlBox({ url }: { url: string | null }) {
       />
       <button
         onClick={copy}
-        disabled={!url}
+        disabled={url == null}
         aria-label="Copy wallpaper URL"
         className="shrink-0 border border-white/[0.12] rounded-md px-3 text-white/50 hover:text-white hover:border-white/30 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
       >
@@ -229,6 +230,8 @@ export default function Home() {
   const [androidScreen, setAndroidScreen] = useState<ScreenSize | null>(null);
 
   const [showStats, setShowStats] = useState("true");
+  const [usernamePosition, setUsernamePosition] =
+    useState<"top" | "bottom" | "hidden">("bottom");
   const [shape, setShape] = useState("box");
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
@@ -330,17 +333,30 @@ export default function Home() {
       user,
       theme: selectedTheme,
       stats: showStats,
+      usernamePosition,
       shape,
       platform,
       device: platform === "android" ? undefined : iphoneDevice,
     });
 
-    const previewParams = new URLSearchParams({ user, theme: selectedTheme, stats: showStats, shape });
+    const previewParams = new URLSearchParams({
+      user,
+      theme: selectedTheme,
+      stats: showStats,
+      shape,
+      usernamePosition,
+    });
     const previewUrl = `/api/preview?${previewParams}`;
 
     // The Android URL carries no size on purpose: the GitWall app appends the
     // phone's real resolution, so one URL works on any Android device.
-    const params = new URLSearchParams({ user, theme: selectedTheme, stats: showStats, shape });
+    const params = new URLSearchParams({
+      user,
+      theme: selectedTheme,
+      stats: showStats,
+      shape,
+      usernamePosition,
+    });
     if (platform === "iphone") params.set("device", iphoneDevice);
     const fullUrl = `${window.location.origin}/api/wallpaper?${params}`;
 
@@ -378,7 +394,7 @@ export default function Home() {
     } finally {
       if (reqIdRef.current === reqId) setLoading(false);
     }
-  }, [username, selectedTheme, iphoneDevice, platform, showStats, shape]);
+  }, [username, selectedTheme, iphoneDevice, platform, showStats,usernamePosition, shape]);
 
   // Direct download for Android uses the browser-reported screen size so the
   // PNG matches the phone even without the app.
@@ -404,6 +420,7 @@ export default function Home() {
     user: username.trim(),
     theme: selectedTheme,
     stats: showStats,
+    usernamePosition,
     shape,
     platform,
     device: platform === "android" ? undefined : iphoneDevice,
@@ -692,6 +709,44 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Username Position */}
+              <div className="mb-7">
+                <label
+                  htmlFor="username-position"
+                  className="block text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-2.5"
+                >
+                  Username Position
+                </label>
+
+                <div className="relative">
+                  <select
+                    id="username-position"
+                    value={usernamePosition}
+                    onChange={(e) =>
+                      setUsernamePosition(
+                        e.target.value as "top" | "bottom" | "hidden"
+                      )
+                    }
+                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-[13px] text-white focus:outline-none focus:border-white/25 transition-colors cursor-pointer appearance-none font-medium"
+                  >
+                    <option value="top" className="bg-[#111]">
+                      Top of Graph
+                    </option>
+
+                    <option value="bottom" className="bg-[#111]">
+                      Bottom of Graph
+                    </option>
+
+                    <option value="hidden" className="bg-[#111]">
+                      Hidden
+                    </option>
+                  </select>
+
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-white/30 text-[10px]">
+                    ▾
+                  </span>
+                </div>
+              </div>
               {/* Theme */}
               <div>
                 <label className="block text-[11px] font-semibold text-white/35 uppercase tracking-widest mb-3">
@@ -1113,7 +1168,7 @@ export default function Home() {
 
               <button
                 onClick={handleDownload}
-                disabled={!wallpaperUrl}
+                disabled={wallpaperUrl == null}
                 className="w-full py-3.5 bg-white/[0.06] border border-white/[0.08] text-white text-[13px] font-semibold rounded-lg hover:bg-white/[0.1] transition-colors disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Download className="size-3.5" />

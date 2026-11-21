@@ -40,7 +40,7 @@ registerFont(path.join(fontsDir, "Damion-Regular.ttf"), { family: "Damion" });
 export const WATERMARK = "gitwall.space";
 
 export type CellShape = "box" | "circle";
-
+export type UsernamePosition = "top" | "Bottom" | "Hidden";
 export interface RenderOptions {
   theme?: string;
   device?: string;
@@ -49,6 +49,7 @@ export interface RenderOptions {
   shape?: CellShape;
   customWidth?: number;
   customHeight?: number;
+
 }
 
 export function renderWallpaper(
@@ -58,6 +59,7 @@ export function renderWallpaper(
   const {
     theme: themeName = "classic",
     device: deviceName = "iphone14",
+    usernamePosition = "bottom",
     stats = true,
     user = "",
     shape = "box",
@@ -214,6 +216,15 @@ export function renderWallpaper(
 
   ctx.textAlign = "center";
 
+  if (usernamePosition === "top" && user) {
+    ctx.fillStyle = theme.text;
+    ctx.font = `bold ${Math.round(13 * scale)}px Inter`;
+
+    const topUsernameY = gridTop - Math.round(25 * scale);
+
+    ctx.fillText(`@${user}`, width / 2, topUsernameY);
+  }
+
   // Game of Thrones houses carry their words as a letter-spaced motto above the
   // username, in the house's own accent colour.
   if (isGot) {
@@ -257,7 +268,7 @@ export function renderWallpaper(
     ctx.textAlign = "center";
   }
 
-  if (user) {
+  if (usernamePosition === "bottom" && user) {
     ctx.fillStyle = theme.text;
     ctx.font = `bold ${Math.round(13 * scale)}px Inter`;
     ctx.fillText(`@${user}`, width / 2, bottomMid);
@@ -267,7 +278,12 @@ export function renderWallpaper(
     const streak = calculateStreak(weeks);
     ctx.fillStyle = theme.subtext;
     ctx.font = `${Math.round(11 * scale)}px Inter`;
-    const statY = user ? bottomMid + Math.round(20 * scale) : bottomMid;
+    const statY =
+      usernamePosition === "top"
+        ? gridBottom + Math.round(25 * scale) + Math.round(11 * scale)
+        : usernamePosition === "bottom" && user
+          ? bottomMid + Math.round(20 * scale)
+        : bottomMid;
     ctx.fillText(
       `${totalContributions.toLocaleString()} contributions · ${streak}d streak`,
       width / 2,

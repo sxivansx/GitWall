@@ -11,6 +11,12 @@ export async function GET(request: NextRequest) {
   const user = searchParams.get("user");
   const theme = searchParams.get("theme") || "classic";
   const statsParam = searchParams.get("stats");
+  const positionParam = searchParams.get("usernamePosition");
+
+  const usernamePosition =
+    positionParam === "top" || positionParam === "hidden"
+      ? positionParam
+      : "bottom";
   const device = searchParams.get("device") || "iphone14";
   const shape = searchParams.get("shape") === "circle" ? "circle" : "box";
 
@@ -50,20 +56,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const cacheKey = `${user}:${theme}:${stats}:custom:${customWidth}x${customHeight}:${shape}`;
+    const cacheKey =
+      `${user}:${theme}:${stats}:custom:${customWidth}x${customHeight}:${shape}:${usernamePosition}`;
     return buildWallpaperResponse(
       user,
       cacheKey,
-      { theme, stats, user, shape, customWidth, customHeight },
+      { theme, stats, user, shape, customWidth, customHeight, usernamePosition },
       "wallpaper"
     );
   }
 
-  const cacheKey = `${user}:${theme}:${stats}:${device}:${shape}`;
+  const cacheKey =
+    `${user}:${theme}:${stats}:${device}:${shape}:${usernamePosition}`;
   return buildWallpaperResponse(
     user,
     cacheKey,
-    { theme, device, stats, user, shape },
+    { theme, device, stats, user, shape, usernamePosition },
     "wallpaper"
   );
 }
